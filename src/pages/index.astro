@@ -43,7 +43,7 @@ const lessons = [
       <div class="arc-line" aria-hidden="true"></div>
       <div class="arc-nodes">
         {lessons.map((l) => (
-          <a class="arc-node" href={`/${l.slug}/`}>
+          <a class="arc-node" {`${import.meta.env.BASE_URL}${l.slug}/`}>
             <div class="arc-dot">{l.num}</div>
             <div class="arc-name">{l.title.split('—')[0].replace('& ', '').trim()}</div>
             <div class="arc-tag">{l.tag.replace('the one idea: ', '')}</div>
