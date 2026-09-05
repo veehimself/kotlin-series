@@ -1,0 +1,616 @@
+---
+import LessonLayout from '../layouts/LessonLayout.astro';
+---
+
+<LessonLayout
+  title='Modeling data in Kotlin'
+  description='data class, sealed class, enum class, object, and companion object — one spectrum from "exactly one value" to "any of N data shapes."'
+  number=3
+  primary='#2f6f5e'
+  accent='#c97b3f'
+>
+  <div class="eyebrow">Kotlin · Type modeling</div>
+    <h1>Modeling data in Kotlin, as <em>one</em> idea.</h1>
+    <p class="lede">
+      Data classes, sealed classes, enums, objects, companion objects — they look like five
+      separate features, but they're really five dials on the same question:
+      <strong>how much does the type system know about what a value is allowed to be?</strong>
+    </p>
+
+    <div class="meta">
+      <span>⏱ ~10 min read</span>
+      <span>🎯 Beginner → early intermediate</span>
+      <span>🧠 Mental model first, syntax second</span>
+    </div>
+
+    <!-- THE BIG QUESTION -->
+    <div class="question">
+      <div class="question-label">The question behind all four</div>
+      <p class="question-text">
+        When the compiler sees <code>val x: Status</code>, what is <code>x</code> allowed to be?
+        <br><br>
+        Each Kotlin modeling tool is just a different answer to that one question.
+      </p>
+    </div>
+
+    <!-- THE SPECTRUM -->
+    <div class="spectrum">
+      <div class="spectrum-label">The four tools, ranked by how much they constrain</div>
+      <div class="spectrum-row">
+        <div class="spectrum-bar"></div>
+        <div class="spectrum-ticks">
+          <div class="tick">
+            <div class="tick-name">object</div>
+            <div class="tick-sub">1 value, always</div>
+          </div>
+          <div class="tick">
+            <div class="tick-name">enum</div>
+            <div class="tick-sub">N values, no data</div>
+          </div>
+          <div class="tick">
+            <div class="tick-name">data class</div>
+            <div class="tick-sub">∞ values, one shape</div>
+          </div>
+          <div class="tick">
+            <div class="tick-name">sealed class</div>
+            <div class="tick-sub">N shapes, each with data</div>
+          </div>
+        </div>
+      </div>
+      <div class="spectrum-anchors">
+        <span>← tighter constraint</span>
+        <span>more flexibility →</span>
+      </div>
+    </div>
+
+    <p>
+      Read it left to right: each step <em>loosens</em> what the type system guarantees, but
+      in exchange gives you more room to describe real-world data. Read it right to left:
+      each step is a "fixed set of possibilities" carved into your type.
+    </p>
+
+    <p>
+      Now let's walk through them — but as <strong>four answers to one question</strong>,
+      not four separate syntax lessons.
+    </p>
+
+    <!-- 1. OBJECT -->
+    <h2><span class="num">1</span>object — "there's only one of these"</h2>
+
+    <p>
+      The tightest possible constraint. When you write <code>object Database</code>,
+      you've told the compiler: <em>there is exactly one value of this type, and it exists.
+      You don't construct it. You don't pass it around. You just refer to <code>Database</code>.</em>
+    </p>
+
+    <div class="tool" data-t="object">
+      <div class="tool-head">
+        <div class="tool-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+        </div>
+        <h3 class="tool-title">object</h3>
+      </div>
+      <p class="tool-tagline">A singleton. One value. That's it.</p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">object</span> <span class="t">Database</span> &#123;
+      <span class="k">fun</span> <span class="fn">connect</span>() = <span class="c">// ...</span>
+  &#125;
+
+  <span class="c">// There is no "new Database()". You just use it.</span>
+  <span class="t">Database</span>.<span class="fn">connect</span>()</div>
+
+      <div class="tool-promise">
+        <strong>Promises:</strong> "No matter how many places in your code use this,
+        they all see the same one instance. The type <em>is</em> the value."
+      </div>
+
+      <div class="vs">
+        <div class="vs-col allow">
+          <div class="vs-label">Allows</div>
+          <ul>
+            <li>Methods, properties — singleton state</li>
+            <li>Grouping constants and helpers</li>
+            <li>Marker types ("this happened")</li>
+          </ul>
+        </div>
+        <div class="vs-col deny">
+          <div class="vs-label">Forbids</div>
+          <ul>
+            <li>Multiple instances</li>
+            <li>Construction with parameters</li>
+            <li>Carrying per-instance data</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>When to reach for it:</strong> one-of-a-kind things — a logger, a config
+      object, a marker like <code>object Pending</code> standing in for "we have no data yet."
+    </div>
+
+    <!-- 2. ENUM -->
+    <h2><span class="num">2</span>enum — "it's one of these named values"</h2>
+
+    <p>
+      The next step up. You know there are <em>several</em> possible values, and you can
+      name them all up front. The compiler will reject any other name. But each value
+      carries no extra information — it's just a name.
+    </p>
+
+    <div class="tool" data-t="enum">
+      <div class="tool-head">
+        <div class="tool-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+        <h3 class="tool-title">enum class</h3>
+      </div>
+      <p class="tool-tagline">A fixed list of named things. No per-value data.</p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">enum class</span> <span class="t">OrderStatus</span> &#123;
+      <span class="v">PENDING</span>,
+      <span class="v">SHIPPED</span>,
+      <span class="v">DELIVERED</span>,
+      <span class="v">CANCELLED</span>
+  &#125;
+
+  <span class="k">val</span> s: <span class="t">OrderStatus</span> = <span class="t">OrderStatus</span>.<span class="v">SHIPPED</span>
+  <span class="c">// s is exactly one of these 4 names. Nothing else compiles.</span></div>
+
+      <div class="tool-promise">
+        <strong>Promises:</strong> "For every value of this type, the compiler can list
+        every legal value in the source. You can switch over them exhaustively."
+      </div>
+
+      <div class="vs">
+        <div class="vs-col allow">
+          <div class="vs-label">Allows</div>
+          <ul>
+            <li>Exhaustive <code>when</code> on every case</li>
+            <li>Each case can have its own behavior</li>
+            <li>A name, no payload</li>
+          </ul>
+        </div>
+        <div class="vs-col deny">
+          <div class="vs-label">Forbids</div>
+          <ul>
+            <li>Carrying data per case (use sealed class for that)</li>
+            <li>Adding new cases from outside the file</li>
+            <li>Two values that "look the same" but differ in data</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Connection to the others:</strong> an enum is basically a sealed class
+      where every subclass is an <code>object</code>. No data, just names. If you ever
+      need to attach data to a case, that's your signal to jump to sealed class.
+    </div>
+
+    <!-- 3. DATA CLASS -->
+    <h2><span class="num">3</span>data class — "a bundle of data, one shape"</h2>
+
+    <p>
+      Now we swing the other way. We let go of "fixed list of values" and instead say:
+      "any number of values are legal, as long as they fit this shape." The shape is
+      a list of fields, and the compiler gives you <code>copy</code>, <code>equals</code>,
+      <code>hashCode</code>, and <code>toString</code> for free.
+    </p>
+
+    <div class="tool" data-t="data">
+      <div class="tool-head">
+        <div class="tool-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+        </div>
+        <h3 class="tool-title">data class</h3>
+      </div>
+      <p class="tool-tagline">A value-object. Many legal values, one fixed shape.</p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">data class</span> <span class="t">Money</span>(
+      <span class="k">val</span> amount: <span class="t">Long</span>,
+      <span class="k">val</span> currency: <span class="t">String</span>
+  )
+
+  <span class="k">val</span> price = <span class="t">Money</span>(<span class="n">1999</span>, <span class="s">"USD"</span>)
+  <span class="k">val</span> doubled = price.<span class="fn">copy</span>(amount = <span class="n">3998</span>)
+  <span class="c">// equals, hashCode, toString, copy — all generated for you</span></div>
+
+      <div class="tool-promise">
+        <strong>Promises:</strong> "Two <code>Money</code> values with the same fields
+        are equal. You can build new ones from old ones without mutation. The shape is
+        visible at a glance."
+      </div>
+
+      <div class="vs">
+        <div class="vs-col allow">
+          <div class="vs-label">Allows</div>
+          <ul>
+            <li>Infinite legal values (any combo of fields)</li>
+            <li>Free <code>equals</code>, <code>copy</code>, destructuring</li>
+            <li>Nesting data classes inside data classes</li>
+          </ul>
+        </div>
+        <div class="vs-col deny">
+          <div class="vs-label">Forbids</div>
+          <ul>
+            <li>"This is one of N shapes" — only one shape here</li>
+            <li>Mutability of fields (use <code>var</code> if you really need it)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="pair">
+      <div>
+        <div class="pair-label bad">Without data class</div>
+        <div class="code"><span class="k">class</span> <span class="t">Money</span>(<span class="k">val</span> amount: <span class="t">Long</span>, <span class="k">val</span> currency: <span class="t">String</span>) &#123;
+      <span class="k">override fun</span> <span class="fn">equals</span>(other: <span class="t">Any</span>?) = <span class="c">... 20 lines ...</span>
+      <span class="k">override fun</span> <span class="fn">hashCode</span>() = <span class="c">... 10 lines ...</span>
+      <span class="k">override fun</span> <span class="fn">toString</span>() = <span class="c">... 5 lines ...</span>
+      <span class="k">fun</span> <span class="fn">copy</span>(...) = <span class="c">... 10 more lines ...</span>
+  &#125;</div>
+      </div>
+      <div>
+        <div class="pair-label good">With data class</div>
+        <div class="code"><span class="k">data class</span> <span class="t">Money</span>(
+      <span class="k">val</span> amount: <span class="t">Long</span>,
+      <span class="k">val</span> currency: <span class="t">String</span>
+  )</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Connection:</strong> a data class is "open" — the set of legal values is
+      infinite. The shape is what you constrain. This is the opposite trade-off to enum.
+    </div>
+
+    <!-- 4. SEALED CLASS -->
+    <h2><span class="num">4</span>sealed class — "one of N shapes, each with its own data"</h2>
+
+    <p>
+      Now combine the two previous ideas. From <strong>enum</strong>, take the
+      "fixed list of possible cases." From <strong>data class</strong>, take the
+      "each case can carry data." A sealed class is the result: a type that has
+      exactly the subclasses you declared — and you can pattern-match exhaustively.
+    </p>
+
+    <div class="tool" data-t="sealed">
+      <div class="tool-head">
+        <div class="tool-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v6a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V3"/><path d="M6 21v-6a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6"/><path d="M3 6h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H3"/><path d="M21 6h-6a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h6"/></svg>
+        </div>
+        <h3 class="tool-title">sealed class / sealed interface</h3>
+      </div>
+      <p class="tool-tagline">A union type. One of N shapes, each with its own fields.</p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">sealed interface</span> <span class="t">Result</span>&lt;<span class="k">out</span> T&gt; &#123;
+      <span class="k">data class</span> <span class="t">Success</span>&lt;T&gt;(<span class="k">val</span> value: T) : <span class="t">Result</span>&lt;T&gt;
+      <span class="k">data class</span> <span class="t">Failure</span>(<span class="k">val</span> error: <span class="t">String</span>, <span class="k">val</span> code: <span class="t">Int</span>) : <span class="t">Result</span>&lt;<span class="t">Nothing</span>&gt;
+      <span class="k">object</span> <span class="t">Loading</span> : <span class="t">Result</span>&lt;<span class="t">Nothing</span>&gt;
+  &#125;
+
+  <span class="c">// The compiler knows: a Result is Success, Failure, OR Loading. Nothing else.</span></div>
+
+      <div class="tool-promise">
+        <strong>Promises:</strong> "Anywhere a <code>Result&lt;T&gt;</code> appears,
+        it's one of these exact subclasses. <code>when</code> can be exhaustive.
+        If you add a new case, the compiler will tell you everywhere you need to update."
+      </div>
+
+      <div class="vs">
+        <div class="vs-col allow">
+          <div class="vs-label">Allows</div>
+          <ul>
+            <li>Each case has its own fields</li>
+            <li>Exhaustive <code>when</code> over the union</li>
+            <li>Mix of <code>data class</code> and <code>object</code> cases</li>
+          </ul>
+        </div>
+        <div class="vs-col deny">
+          <div class="vs-label">Forbids</div>
+          <ul>
+            <li>Subclasses declared outside the file (sealed = closed set)</li>
+            <li>Treating it as one homogeneous shape</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      This is where the four tools click together. Look at the example: inside the
+      sealed interface we have <strong>data class</strong> cases (with fields), an
+      <strong>object</strong> case (no fields, single value), and the whole thing plays
+      the role of an <strong>enum</strong> (closed list of cases). The four are
+      components of one system, not separate features.
+    </p>
+
+    <!-- 5. COMPANION OBJECT -->
+    <h2><span class="num">5</span>companion object — "behavior that belongs to the type, not its instances"</h2>
+
+    <p>
+      The last dial isn't about how many values exist. It's about <em>where</em> code lives.
+      A companion object is a singleton <code>object</code> nested inside a class. It's
+      the one place the language gives you to say: "this function isn't about one
+      <code>User</code> — it's about <code>User</code> the concept."
+    </p>
+
+    <div class="tool" data-t="companion">
+      <div class="tool-head">
+        <div class="tool-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3 class="tool-title">companion object</h3>
+      </div>
+      <p class="tool-tagline">A singleton living inside a class. The class's "static slot."</p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">data class</span> <span class="t">User</span>(<span class="k">val</span> name: <span class="t">String</span>, <span class="k">val</span> email: <span class="t">String</span>) &#123;
+      <span class="k">companion object</span> &#123;
+          <span class="k">val</span> <span class="v">GUEST</span> = <span class="t">User</span>(<span class="s">"Guest"</span>, <span class="s">""</span>)            <span class="c">// constant</span>
+          <span class="k">fun</span> <span class="fn">fromEmail</span>(email: <span class="t">String</span>) =               <span class="c">// factory</span>
+              <span class="t">User</span>(email.substringBefore(<span class="s">"@"</span>), email)
+      &#125;
+  &#125;
+
+  <span class="c">// Reached as User.GUEST, User.fromEmail(...). No User() instance involved.</span></div>
+
+      <div class="tool-promise">
+        <strong>Promises:</strong> "Inside this class, there's a named singleton. The
+        class can refer to it without qualification. Externally, you reach it as
+        <code>User.something</code>."
+      </div>
+
+      <div class="vs">
+        <div class="vs-col allow">
+          <div class="vs-label">Use it for</div>
+          <ul>
+            <li>Factory functions (<code>User.fromEmail(...)</code>)</li>
+            <li>Constants tied to the type (<code>User.MAX_NAME_LEN</code>)</li>
+            <li>Type-level operations (<code>Json.encodeToString&lt;User&gt;(...)</code>)</li>
+          </ul>
+        </div>
+        <div class="vs-col deny">
+          <div class="vs-label">Don't use it for</div>
+          <ul>
+            <li>Per-instance state (that's what fields are for)</li>
+            <li>Business logic that should live on the instance</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Why it matters for the "one idea" framing:</strong> companion object is
+      the place where all the other tools reach up to the <em>type level</em>. Factories
+      for data classes, constants for enums, shared state for sealed hierarchies. It's
+      the glue.
+    </div>
+
+    <!-- THE BIG EXAMPLE -->
+    <h2>The four tools in one program</h2>
+    <p>
+      Real Kotlin code mixes all four. Here's a tiny order-screen model that
+      uses each tool for the job it's best at — and you can see them reinforce
+      each other.
+    </p>
+
+    <div class="big-example">
+      <div class="big-example-head">
+        <h3>Order screen model</h3>
+      </div>
+      <p class="big-example-desc">Each modeling tool is doing a different job. Read the annotations.</p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// ── enum: closed list, no per-case data ─────────────────────────</span>
+  <span class="k">enum class</span> <span class="t">ConnectionState</span> &#123; <span class="v">IDLE</span>, <span class="v">CONNECTING</span>, <span class="v">CONNECTED</span>, <span class="v">FAILED</span> &#125;
+
+  <span class="c">// ── data class: a value object, one shape, infinite values ──────</span>
+  <span class="k">data class</span> <span class="t">User</span>(<span class="k">val</span> id: <span class="t">Long</span>, <span class="k">val</span> name: <span class="t">String</span>, <span class="k">val</span> email: <span class="t">String</span>)
+
+  <span class="c">// ── sealed class: union of N data shapes ────────────────────────</span>
+  <span class="k">sealed interface</span> <span class="t">OrderUiState</span> &#123;
+      <span class="k">data object</span> <span class="t">Loading</span> : <span class="t">OrderUiState</span>                <span class="c">// ← object inside sealed</span>
+      <span class="k">data object</span> <span class="t">Empty</span> : <span class="t">OrderUiState</span>                   <span class="c">// ← object inside sealed</span>
+      <span class="k">data class</span> <span class="t">Success</span>(<span class="k">val</span> orders: <span class="t">List</span>&lt;<span class="t">Order</span>&gt;) : <span class="t">OrderUiState</span>
+      <span class="k">data class</span> <span class="t">Error</span>(<span class="k">val</span> message: <span class="t">String</span>, <span class="k">val</span> code: <span class="t">Int</span>) : <span class="t">OrderUiState</span>
+  &#125;
+
+  <span class="c">// ── data class + companion object: factory + constants on the type ─</span>
+  <span class="k">data class</span> <span class="t">Order</span>(<span class="k">val</span> id: <span class="t">String</span>, <span class="k">val</span> totalCents: <span class="t">Long</span>, <span class="k">val</span> currency: <span class="t">String</span>) &#123;
+      <span class="k">companion object</span> &#123;
+          <span class="k">val</span> <span class="v">EMPTY</span> = <span class="t">Order</span>(id = <span class="s">"draft"</span>, totalCents = <span class="n">0</span>, currency = <span class="s">"USD"</span>)
+          <span class="k">const val</span> <span class="v">MAX_ITEMS</span> = <span class="n">50</span>
+          <span class="k">fun</span> <span class="fn">fromCents</span>(cents: <span class="t">Long</span>) = <span class="t">Order</span>(<span class="v">EMPTY</span>.id, cents, <span class="v">EMPTY</span>.currency)
+      &#125;
+  &#125;</div>
+
+      <div class="annotate">
+        <div class="annotate-list">
+          <h4>What the compiler knows</h4>
+          <ul>
+            <li><code>ConnectionState</code> is exactly 4 names — switch is exhaustive.</li>
+            <li><code>User</code> has 3 fields, but any combo is legal.</li>
+            <li><code>OrderUiState</code> is one of 4 named shapes — adding a fifth means
+                a compile error at every <code>when</code> that doesn't handle it.</li>
+            <li><code>Order.EMPTY</code> and <code>Order.fromCents(...)</code> exist on
+                the <em>type</em>, not on any one instance.</li>
+          </ul>
+        </div>
+        <div class="annotate-list">
+          <h4>Why you reach for each</h4>
+          <ul>
+            <li><strong>enum</strong>: "I have a list of named states and nothing else to say."</li>
+            <li><strong>data class</strong>: "I have data; let me describe its shape once."</li>
+            <li><strong>sealed class</strong>: "The value is one of N kinds, and each kind carries different data."</li>
+            <li><strong>companion object</strong>: "I want a factory / constant that lives on the type."</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- THE WHEN — the payoff -->
+    <h2>The payoff: exhaustive <code>when</code></h2>
+    <p>
+      The reason all this modeling is worth it: the compiler can check that you've
+      handled every case. Notice the <code>OrderUiState</code> below — if anyone adds
+      a new case to the sealed interface later, this <code>when</code> becomes a
+      compile error until you handle it. That's the whole point.
+    </p>
+
+    <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">fun</span> <span class="fn">render</span>(state: <span class="t">OrderUiState</span>): <span class="t">String</span> = <span class="k">when</span> (state) &#123;
+      <span class="k">is</span> <span class="t">OrderUiState</span>.<span class="t">Loading</span>      -> <span class="s">"Loading…"</span>
+      <span class="k">is</span> <span class="t">OrderUiState</span>.<span class="t">Empty</span>        -> <span class="s">"No orders yet"</span>
+      <span class="k">is</span> <span class="t">OrderUiState</span>.<span class="t">Success</span>      -> <span class="s">"$&#123;state.orders.size&#125; orders"</span>
+      <span class="k">is</span> <span class="t">OrderUiState</span>.<span class="t">Error</span>        -> <span class="s">"Error $&#123;state.code&#125;: $&#123;state.message&#125;"</span>
+  &#125;</div>
+
+    <p>
+      With a plain <code>data class</code>, you couldn't write this — the compiler has no
+      way to know "all the cases." With a plain <code>enum</code>, you could — but
+      you couldn't carry the <code>code</code> on <code>Error</code>. The sealed class
+      is what makes the union of typed data and exhaustive matching possible.
+    </p>
+
+    <!-- HOW THEY FIT -->
+    <h2>How they fit together (one picture)</h2>
+
+    <div class="puzzle">
+      <p style="margin:0 0 12px; color: var(--ink-soft); font-size: 14px;">
+        The mental model: every value of every type is somewhere on this spectrum.
+        You pick the tool that puts it at the right spot.
+      </p>
+      <div class="puzzle-grid">
+        <div class="puzzle-cell" data-t="object">
+          <span class="dot"></span>
+          <div class="txt">
+            <strong><code>object</code> — value is fixed at 1.</strong>
+            Singleton. The type and the value are the same thing.
+          </div>
+        </div>
+        <div class="puzzle-cell" data-t="enum">
+          <span class="dot"></span>
+          <div class="txt">
+            <strong><code>enum</code> — value is one of N names.</strong>
+            Closed list. No per-case data. Exhaustive <code>when</code> guaranteed.
+          </div>
+        </div>
+        <div class="puzzle-cell" data-t="data">
+          <span class="dot"></span>
+          <div class="txt">
+            <strong><code>data class</code> — value is "any combo of these fields."</strong>
+            One shape, infinite values. Free <code>copy</code>/<code>equals</code>/<code>toString</code>.
+          </div>
+        </div>
+        <div class="puzzle-cell" data-t="sealed">
+          <span class="dot"></span>
+          <div class="txt">
+            <strong><code>sealed class</code> — value is one of N shapes, each its own type.</strong>
+            Combine: closed list × per-case data. The workhorse of "result/UI state" patterns.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECAP -->
+    <div class="recap">
+      <h2><span class="num">↺</span>Recap in one minute</h2>
+      <p>
+        You learned five things, but they answer one question — <em>how much does
+        Kotlin's type system know about what a value is allowed to be?</em>
+      </p>
+      <div class="recap-grid">
+        <div class="recap-item">
+          <div class="lbl">object</div>
+          <div class="desc">Exactly one value. The type <em>is</em> the value. Use for singletons and markers.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">enum class</div>
+          <div class="desc">One of N named values, listed up front. No per-case data. Exhaustive <code>when</code>.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">data class</div>
+          <div class="desc">A bundle of fields. One shape, infinite values. Free <code>copy</code>/<code>equals</code>/<code>hashCode</code>/<code>toString</code>.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">sealed class / interface</div>
+          <div class="desc">A closed union of N shapes, each its own type. Combines enum's exhaustiveness with data class's per-case fields.</div>
+        </div>
+        <div class="recap-item" style="grid-column: 1 / -1;">
+          <div class="lbl">companion object</div>
+          <div class="desc">A singleton inside a class. Holds factories, constants, and type-level operations — the place a data class / enum / sealed class reaches up to the type level.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="end">
+      Five syntax features, one mental model: <em>constrain the set of legal values,
+      and let the compiler help you handle them.</em>
+    </div>
+</LessonLayout>
+
+<style>
+/* ==== Page-specific: the spectrum diagram ==== */
+  .spectrum { margin: 40px 0 64px; padding: var(--space-8) var(--space-6); background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); }
+  .spectrum-label { text-align: center; color: var(--ink-soft); font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 28px; }
+  .spectrum-row { display: grid; grid-template-columns: 1fr; gap: 0; position: relative; }
+  .spectrum-bar { height: 6px; background: linear-gradient(90deg, var(--accent) 0%, var(--primary) 100%); border-radius: 3px; margin: 32px 60px 56px; position: relative; }
+  .spectrum-bar::before, .spectrum-bar::after { content: ""; position: absolute; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 3px solid var(--primary); }
+  .spectrum-bar::before { left: -7px; }
+  .spectrum-bar::after { right: -7px; border-color: var(--accent); }
+  .spectrum-ticks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; position: relative; }
+  .tick { text-align: center; position: relative; padding-top: 20px; }
+  .tick::before { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 2px; height: 14px; background: var(--line); }
+  .tick-name { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .tick-sub { font-size: 12px; color: var(--ink-soft); }
+  .spectrum-anchors { display: flex; justify-content: space-between; color: var(--ink-soft); font-size: 12px; margin-top: 8px; padding: 0 60px; }
+
+  /* ==== Page-specific: tool cards ==== */
+  .tool { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 24px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+  .tool-head { display: flex; align-items: center; gap: var(--space-4); margin-bottom: 8px; }
+  .tool-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; }
+  .tool-tagline { font-size: 15px; color: var(--ink-mid); margin: 0 0 20px 64px; }
+  .tool-promise { background: var(--primary-soft); border-left: 3px solid var(--primary); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0 20px 64px; font-size: 14.5px; color: var(--ink-mid); }
+  .tool-promise strong { color: var(--primary); }
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin: 20px 0 0 64px; }
+  .vs-col { background: #fbfaf6; border: 1px solid var(--line-soft); border-radius: 12px; padding: 16px 18px; }
+  .vs-col.allow { border-top: 3px solid var(--primary); }
+  .vs-col.deny { border-top: 3px solid #b06367; }
+  .vs-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .vs-col.allow .vs-label { color: var(--primary); }
+  .vs-col.deny .vs-label { color: #b06367; }
+  .vs-col ul { margin: 0; padding-left: 18px; }
+  .vs-col li { font-size: 14px; line-height: 1.7; color: var(--ink-mid); }
+  @media (max-width: 640px) { .vs { grid-template-columns: 1fr; margin-left: 0; } .tool-promise { margin-left: 0; } .tool-tagline { margin-left: 0; } }
+
+  /* ==== Page-specific: big example ==== */
+  .big-example { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 32px 0; }
+  .big-example-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .big-example-head h3 { margin: 0; }
+  .big-example-desc { color: var(--ink-soft); font-size: 14px; margin: 0 0 20px; }
+  .annotate { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0; }
+  @media (max-width: 720px) { .annotate { grid-template-columns: 1fr; } }
+  .annotate-list { background: #fbfaf6; border: 1px solid var(--line-soft); border-radius: 12px; padding: 18px 22px; }
+  .annotate-list h4 { font-family: "Outfit", sans-serif; font-weight: 600; font-size: 14px; margin: 0 0 12px; color: var(--primary); }
+  .annotate-list ul { margin: 0; padding-left: 18px; }
+  .annotate-list li { font-size: 14px; line-height: 1.7; color: var(--ink-mid); }
+  .annotate-list li code { font-size: 0.85em; }
+
+  /* ==== Page-specific: connection puzzle ==== */
+  .puzzle { margin: 40px 0; padding: var(--space-8); background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); }
+  .puzzle-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+  @media (max-width: 640px) { .puzzle-grid { grid-template-columns: 1fr; } }
+  .puzzle-cell { display: flex; gap: 12px; padding: 14px 16px; border: 1px solid var(--line-soft); border-radius: 12px; background: #fbfaf6; }
+  .puzzle-cell .dot { flex-shrink: 0; width: 10px; height: 10px; border-radius: 50%; margin-top: 8px; }
+  .puzzle-cell[data-t="object"] .dot { background: #c97b3f; }
+  .puzzle-cell[data-t="enum"] .dot { background: #d49a3f; }
+  .puzzle-cell[data-t="data"] .dot { background: var(--primary); }
+  .puzzle-cell[data-t="sealed"] .dot { background: #4a8e7c; }
+  .puzzle-cell .txt { font-size: 14px; line-height: 1.55; color: var(--ink-mid); }
+  .puzzle-cell .txt strong { color: var(--ink); }
+</style>

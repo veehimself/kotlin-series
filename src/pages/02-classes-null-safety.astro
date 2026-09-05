@@ -1,0 +1,653 @@
+---
+import LessonLayout from '../layouts/LessonLayout.astro';
+---
+
+<LessonLayout
+  title='Classes & null safety'
+  description='Primary/secondary constructors, properties, visibility, and the null safety system: ?., ?:, smart casts, !!.'
+  number=2
+  primary='#6b4e71'
+  accent='#d4a574'
+>
+  <div class="eyebrow">Kotlin · Type-level precision</div>
+    <h1>Classes &amp; null safety, as <em>one</em> idea: make impossible states impossible.</h1>
+    <p class="lede">
+      Constructors, properties, visibility modifiers, null safety — they look like
+      four different things, but they all serve one goal: <strong>describe the world
+      so precisely at the type level that the compiler catches the bugs that would
+      otherwise crash at runtime.</strong>
+    </p>
+
+    <div class="meta">
+      <span>⏱ ~12 min read</span>
+      <span>🎯 Beginner → intermediate</span>
+      <span>🧠 Classes = syntax · Null safety = the new mental model</span>
+    </div>
+
+    <!-- THE BIG QUESTION -->
+    <div class="question">
+      <div class="question-label">The question behind all four features</div>
+      <p class="question-text">
+        What states should it be <em>impossible</em> for this thing to be in?
+        <br><br>
+        Then you pick the language feature that makes each impossible state actually
+        impossible at compile time, not just "unlikely."
+      </p>
+    </div>
+
+    <!-- THE MAP -->
+    <div class="map">
+      <div class="map-title">The four features, ranked by what they make impossible</div>
+      <table class="map-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>What it makes impossible</th>
+            <th>Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="feat">Primary constructor with required params</td>
+            <td class="stops">Creating an instance with missing required data.</td>
+            <td><span class="lvl syn">Syntax</span></td>
+          </tr>
+          <tr>
+            <td class="feat">val (immutable property)</td>
+            <td class="stops">Reassigning the field after construction.</td>
+            <td><span class="lvl syn">Syntax</span></td>
+          </tr>
+          <tr>
+            <td class="feat">private / internal visibility</td>
+            <td class="stops">Touching internals from the wrong place.</td>
+            <td><span class="lvl syn">Syntax</span></td>
+          </tr>
+          <tr>
+            <td class="feat">Non-null type <code>String</code> (vs <code>String?</code>)</td>
+            <td class="stops">Calling a method on null and getting an NPE.</td>
+            <td><span class="lvl model">New mental model</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="text-align: center; color: var(--ink-soft); font-size: 13.5px; margin: 24px 0 0;">
+        The first three are vocabulary. The fourth is the one that <em>changes how you think.</em>
+      </p>
+    </div>
+
+    <!-- PART 1: CLASSES (brisk tour) -->
+    <h2><span class="num">1</span>primary constructor — "what does it take to make one of these?"</h2>
+
+    <p>
+      The primary constructor is the main one. It lives in the class header, takes
+      the parameters that define an instance, and runs the <code>init</code> block
+      the moment you write <code>User(...)</code>.
+    </p>
+
+    <div class="concept" data-t="primary">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">class User(val name: String, var age: Int)</h3>
+          <div class="concept-sub">primary constructor · in the class header · pairs with init &#123; &#125;</div>
+        </div>
+      </div>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">class</span> <span class="t">User</span>(
+      <span class="k">val</span> name: <span class="t">String</span>,    <span class="c">// val in header → public read-only property</span>
+      <span class="k">var</span> age: <span class="t">Int</span>          <span class="c">// var in header → public mutable property</span>
+  ) &#123;
+      <span class="k">init</span> &#123;
+          <span class="fn">require</span>(age &gt;= <span class="n">0</span>) &#123; <span class="s">"age can't be negative"</span> &#125;
+          <span class="c">// runs at construction. Throws if age is bad.</span>
+      &#125;
+  &#125;
+
+  <span class="k">val</span> u = <span class="t">User</span>(name = <span class="s">"Mavis"</span>, age = <span class="n">3</span>)   <span class="c">// OK</span>
+  <span class="k">val</span> bad = <span class="t">User</span>(<span class="s">"Mavis"</span>, -<span class="n">1</span>)              <span class="c">// IllegalArgumentException at runtime</span></div>
+
+      <div class="concept-line">
+        <strong>Two design wins in one feature:</strong> the parameters in the header
+        <em>declare</em> what the class needs (you can't construct without them) and
+        <em>publish</em> the public state (<code>val</code>/<code>var</code> in the header
+        becomes a property). Compare with Java, where this is a 20-line ceremony.
+      </div>
+    </div>
+
+    <h2><span class="num">2</span>secondary constructor — the "alt" constructor</h2>
+
+    <div class="concept" data-t="secondary">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h12"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">constructor(...): this(...)</h3>
+          <div class="concept-sub">less common · delegates to the primary one · use when inputs are genuinely different shapes</div>
+        </div>
+      </div>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">class</span> <span class="t">User</span>(<span class="k">val</span> name: <span class="t">String</span>, <span class="k">val</span> email: <span class="t">String</span>) &#123;
+      <span class="c">// Secondary: you have just an email, derive the name</span>
+      <span class="k">constructor</span>(email: <span class="t">String</span>) : <span class="th">this</span>(
+          name = email.substringBefore(<span class="s">"@"</span>),
+          email = email
+      )
+  &#125;
+
+  <span class="k">val</span> a = <span class="t">User</span>(<span class="s">"Mavis"</span>, <span class="s">"m@x.io"</span>)   <span class="c">// primary</span>
+  <span class="k">val</span> b = <span class="t">User</span>(<span class="s">"m@x.io"</span>)                <span class="c">// secondary</span></div>
+
+      <div class="concept-line">
+        <strong>Heads up:</strong> the secondary constructor <em>must</em> delegate
+        to the primary with <code>: this(...)</code>. This isn't a stylistic rule —
+        it guarantees the primary's <code>init</code> logic runs no matter which
+        path you take.
+      </div>
+
+      <div class="note">
+        <strong>When to reach for it:</strong> genuinely rare. If you find yourself
+        writing a lot of secondary constructors, a named factory function in the
+        <code>companion object</code> (e.g. <code>User.fromEmail(...)</code>) is
+        almost always cleaner.
+      </div>
+    </div>
+
+    <h2><span class="num">3</span>properties — state with a contract</h2>
+
+    <div class="concept" data-t="props">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">val / var, custom accessors, backing fields</h3>
+          <div class="concept-sub">a property = a field + (optional) getter and setter · default is public, read-only (val)</div>
+        </div>
+      </div>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">class</span> <span class="t">Account</span>(<span class="k">val</span> owner: <span class="t">String</span>) &#123;
+      <span class="k">var</span> balance: <span class="t">Double</span> = <span class="n">0.0</span>      <span class="c">// mutable, but you can guard the setter</span>
+
+      <span class="k">var</span> nickname: <span class="t">String</span> = owner
+          <span class="k">set</span>(value) &#123;
+              <span class="th">field</span> = value.<span class="fn">trim</span>().<span class="fn">take</span>(<span class="n">20</span>)   <span class="c">// sanitize on write</span>
+          &#125;
+
+      <span class="k">val</span> isOverdrawn: <span class="t">Boolean</span>     <span class="c">// computed — no backing field needed</span>
+          <span class="k">get</span>() = balance &lt; <span class="n">0</span>
+
+      <span class="c">// `field` inside set/get refers to the backing field.</span>
+  &#125;</div>
+
+      <p>
+        A property in Kotlin is a <em>field plus optional accessors</em>. The defaults
+        are sensible (<code>val</code> = public read-only, <code>var</code> = public
+        read-write), and the override syntax is short. Most "getter/setter" code in
+        Java becomes one or two lines here.
+      </p>
+    </div>
+
+    <h2><span class="num">4</span>visibility modifiers — who is allowed to touch this?</h2>
+
+    <div class="concept" data-t="vis">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">public · internal · protected · private</h3>
+          <div class="concept-sub">default is public · internal = same module · protected = subclasses · private = this scope only</div>
+        </div>
+      </div>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">class</span> <span class="t">Repo</span> &#123;
+      <span class="k">private val</span> cache = <span class="t">HashMap</span>&lt;<span class="t">String</span>, <span class="t">User</span>&gt;()   <span class="c">// only this class</span>
+      <span class="k">internal val</span> stats = <span class="t">Stats</span>()                    <span class="c">// anyone in this module</span>
+      <span class="k">protected fun</span> <span class="fn">hook</span>() &#123;&#125;                          <span class="c">// this class + subclasses</span>
+      <span class="k">fun</span> <span class="fn">find</span>(id: <span class="t">String</span>): <span class="t">User</span>? = cache[id]     <span class="c">// public by default</span>
+  &#125;</div>
+
+      <div class="concept-line">
+        <strong>Two differences from Java worth noting:</strong>
+        (1) Kotlin's <em>default is public</em>, the opposite of Java.
+        (2) <code>internal</code> means "anyone in the same module" — a unit Kotlin
+        gives you that Java doesn't.
+      </div>
+    </div>
+
+    <!-- =========================================== -->
+    <!-- THE BIG SHIFT: NULL SAFETY -->
+    <!-- =========================================== -->
+    <div class="big-section">
+      <div class="tag">The actual mental shift</div>
+      <h2>Null safety: the type system tracks "could be null"</h2>
+      <p>
+        The four class features above are mostly vocabulary. <strong>This one changes
+        how you think.</strong> The new rule: every reference type has a "could be null"
+        twin, and the compiler forces you to acknowledge it before you touch the value.
+      </p>
+    </div>
+
+    <h2>The rule that changes everything</h2>
+
+    <p>
+      In Java, every reference can be null, and you find out at runtime when
+      <code>NullPointerException</code> arrives. In Kotlin, the type itself tells
+      you — and the compiler enforces it.
+    </p>
+
+    <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">val</span> a: <span class="t">String</span>  = <span class="s">"hello"</span>   <span class="c">// a String. The compiler says: never null.</span>
+  <span class="k">val</span> b: <span class="t">String</span>? = <span class="s">"hello"</span>   <span class="c">// a String-or-null. Compiler: could be null.</span>
+  <span class="k">val</span> c: <span class="t">String</span>? = <span class="k">null</span>      <span class="c">// fine — c is allowed to be null</span>
+
+  a.<span class="fn">length</span>     <span class="c">// ✅ always works, compiler knows a is non-null</span>
+  b.<span class="fn">length</span>     <span class="c">// ❌ compile error: b could be null</span></div>
+
+    <p>
+      The two type signatures are <em>different types</em>. <code>String</code> and
+      <code>String?</code> are not the same. You can't pass one where the other is
+      expected. This is the entire game.
+    </p>
+
+    <div class="ok">
+      <strong>The new mental model:</strong> "is this thing allowed to be null?"
+      is now a property of its <em>type</em>, not a comment someone forgot to write.
+      The compiler enforces it.
+    </div>
+
+    <h2>The five tools for working with null</h2>
+
+    <p>
+      The compiler won't let you touch a nullable value directly. So Kotlin gives
+      you five ways to handle the null. They are not interchangeable — each one
+      is right for a different shape of "what should happen if it's null."
+    </p>
+
+    <div class="ns-flow">
+
+      <div class="ns-row safe">
+        <div class="ns-op">
+          <div class="op-name">?.</div>
+          <div class="op-when">safe call · "do this only if non-null"</div>
+        </div>
+        <div class="ns-body">
+          <p>Short-circuits to <code>null</code> if the receiver is null. Returns the result of the call, also nullable.</p>
+          <div class="code"><span class="k">val</span> name: <span class="t">String</span>? = <span class="fn">getName</span>()
+  <span class="k">val</span> len: <span class="t">Int</span>? = name?.<span class="fn">length</span>     <span class="c">// Int? — could be null</span>
+  <span class="c">// If name is null, the whole expression is null. No NPE.</span></div>
+        </div>
+      </div>
+
+      <div class="ns-row safe">
+        <div class="ns-op">
+          <div class="op-name">?:</div>
+          <div class="op-when">Elvis · "default value if null"</div>
+        </div>
+        <div class="ns-body">
+          <p>If the left side is null, use the right side. Crucially, the result is the <em>non-null</em> type — you escape the null check.</p>
+          <div class="code"><span class="k">val</span> name: <span class="t">String</span>? = <span class="fn">getName</span>()
+  <span class="k">val</span> safe: <span class="t">String</span> = name ?: <span class="s">"Anonymous"</span>   <span class="c">// String, not String?</span>
+
+  <span class="c">// Elvis + throw = "fail loudly if missing"</span>
+  <span class="k">val</span> required = name ?: <span class="fn">error</span>(<span class="s">"name missing"</span>)</div>
+        </div>
+      </div>
+
+      <div class="ns-row bridge">
+        <div class="ns-op">
+          <div class="op-name">let</div>
+          <div class="op-when">safe call + block · "do something with the value, only if present"</div>
+        </div>
+        <div class="ns-body">
+          <p>The signature tool from the previous lesson, used here to scope "I have a non-null value now" to a block.</p>
+          <div class="code"><span class="k">val</span> email: <span class="t">String</span>? = <span class="fn">readEmail</span>()
+
+  <span class="c">// `?.let` runs the block only if email is not null.</span>
+  <span class="c">// Inside, `it` is the non-null String.</span>
+  <span class="k">val</span> local = email?.<span class="fn">let</span> &#123; <span class="it">it</span>.<span class="fn">substringBefore</span>(<span class="s">"@"</span>) &#125;
+  <span class="c">// local is String? — the outer expression is still nullable.</span></div>
+        </div>
+      </div>
+
+      <div class="ns-row bridge">
+        <div class="ns-op">
+          <div class="op-name">smart cast</div>
+          <div class="op-when">"after I check, the compiler trusts me"</div>
+        </div>
+        <div class="ns-body">
+          <p>After a null check, the compiler narrows the type from <code>T?</code> to <code>T</code> automatically — no annotation needed.</p>
+          <div class="code"><span class="k">fun</span> <span class="fn">describe</span>(s: <span class="t">String</span>?): <span class="t">String</span> &#123;
+      <span class="k">if</span> (s == <span class="k">null</span>) <span class="k">return</span> <span class="s">"empty"</span>
+      <span class="c">// ↑ after this, s is smart-cast to String. No ?. needed.</span>
+      <span class="k">return</span> <span class="s">"length = </span><span class="th">$&#123;</span>s.<span class="fn">length</span><span class="th">&#125;</span><span class="s">"</span>
+  &#125;
+
+  <span class="c">// Works with `?:`, `?.`, `is String`, `!= null` — any check the compiler can verify.</span></div>
+        </div>
+      </div>
+
+      <div class="ns-row danger">
+        <div class="ns-op">
+          <div class="op-name">!!</div>
+          <div class="op-when">not-null assertion · "I take responsibility — it's not null, I promise"</div>
+        </div>
+        <div class="ns-body">
+          <p>Converts a <code>T?</code> to a <code>T</code> by asserting it's not null. If it <em>is</em> null, you get an NPE — same crash you'd have had in Java.</p>
+          <div class="code"><span class="k">val</span> name: <span class="t">String</span>? = <span class="fn">getName</span>()
+  <span class="k">val</span> length = name!!!.<span class="fn">length</span>      <span class="c">// works, throws NPE if name is null</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="warn">
+      <strong>Treat <code>!!</code> as a smell.</strong> It works the same as
+      "ignore null" in Java — the crash is just deferred to runtime. Every
+      legitimate use of <code>!!</code> should come with a one-line comment
+      explaining why you're <em>certain</em> the value can't be null at this point.
+      In practice, you almost never need it.
+    </div>
+
+    <!-- SMART CAST — the timeline -->
+    <h2>Smart cast, step by step</h2>
+    <p>
+      Smart cast is the part that feels like magic. The compiler walks through your
+      code, notes where you've proved the value isn't null, and changes the type
+      accordingly — automatically. You don't write the cast. You write the check.
+    </p>
+
+    <div class="smartcast">
+      <h3 style="margin-top: 0;">What the compiler is doing, line by line</h3>
+
+      <div class="sc-step">
+        <div class="sc-line-num">line 1</div>
+        <div>
+          <span class="sc-type nullable">String?</span>
+          <span class="sc-desc">
+            <code>fun f(s: String?): Int</code> — parameter enters as <code>String?</code>.
+          </span>
+        </div>
+      </div>
+
+      <div class="sc-step">
+        <div class="sc-line-num">line 2</div>
+        <div>
+          <span class="sc-type nullable">String?</span>
+          <span class="sc-desc">
+            <code>if (s == null) return 0</code> — you handle the null case.
+          </span>
+        </div>
+      </div>
+
+      <div class="sc-step">
+        <div class="sc-line-num">line 3</div>
+        <div>
+          <span class="sc-type nonnull">String</span>
+          <span class="sc-desc">
+            After the check, the compiler narrows <code>s</code> to <code>String</code>.
+            You can call <code>s.length</code> directly — no <code>?.</code>, no <code>!!</code>.
+          </span>
+        </div>
+      </div>
+
+      <div class="sc-step">
+        <div class="sc-line-num">line 4</div>
+        <div>
+          <span class="sc-type nonnull">String</span>
+          <span class="sc-desc">
+            The narrowed type stays for the rest of the function (or until something
+            could re-null it).
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Smart cast works for any check the compiler can verify:</strong>
+      <code>== null</code>, <code>!= null</code>, <code>?:</code>, <code>is String</code>,
+      a <code>when</code> branch. It also works across <em>val</em> properties —
+      but not <em>var</em> properties, because another thread could null them
+      between the check and the use.
+    </div>
+
+    <!-- THE BIG EXAMPLE -->
+    <h2>Putting it all together: a real class</h2>
+    <p>
+      A <code>User</code> class that uses every feature on this page, with the
+      nullability decisions made explicit.
+    </p>
+
+    <div class="big-example">
+      <div class="big-example-head">
+        <h3>User class — annotated</h3>
+      </div>
+      <p class="big-example-desc">Each line earns its place. Read the comments.</p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">class</span> <span class="t">User</span>(
+      <span class="k">val</span> id: <span class="t">Long</span>,                          <span class="c">// primary ctor · required, immutable</span>
+      <span class="k">val</span> name: <span class="t">String</span>,                       <span class="c">// required, immutable, non-null</span>
+      <span class="k">val</span> email: <span class="t">String</span>,                      <span class="c">// same</span>
+      <span class="k">var</span> bio: <span class="t">String</span> = <span class="s">""</span>,                   <span class="c">// mutable, but starts empty (non-null)</span>
+      <span class="k">val</span> avatarUrl: <span class="t">String</span>? = <span class="k">null</span>            <span class="c">// allowed to be missing — type says so</span>
+  ) &#123;
+      <span class="k">private val</span> displayCache = <span class="t">HashMap</span>&lt;<span class="t">String</span>, <span class="t">String</span>&gt;()  <span class="c">// private: no one else touches this</span>
+
+      <span class="k">val</span> initials: <span class="t">String</span>                     <span class="c">// computed property, non-null</span>
+          <span class="k">get</span>() = name.<span class="fn">split</span>(<span class="s">" "</span>).<span class="fn">map</span> &#123; <span class="it">it</span>.<span class="fn">first</span>() &#125;.<span class="fn">joinToString</span>(<span class="s">""</span>)
+
+      <span class="k">fun</span> <span class="fn">avatarOrDefault</span>(): <span class="t">String</span> =
+          avatarUrl ?: <span class="s">"https://cdn.example.com/anon.png"</span>   <span class="c">// Elvis — exit the null state</span>
+  &#125;
+
+  <span class="c">// Caller side, all the null-safety tools in 6 lines:</span>
+  <span class="k">fun</span> <span class="fn">renderName</span>(u: <span class="t">User</span>?, fallback: <span class="t">String</span> = <span class="s">"Anonymous"</span>): <span class="t">String</span> &#123;
+      <span class="k">return</span> u?.name ?: fallback       <span class="c">// safe call + Elvis — both null paths covered</span>
+  &#125;
+
+  <span class="k">fun</span> <span class="fn">loadAndShow</span>(id: <span class="t">Long</span>) &#123;
+      <span class="k">val</span> u: <span class="t">User</span>? = <span class="fn">repo</span>.<span class="fn">findById</span>(id)    <span class="c">// might not exist → User?</span>
+      u?.<span class="fn">let</span> &#123; user -&gt;                            <span class="c">// block only runs if u != null</span>
+          <span class="fn">println</span>(user.initials)                   <span class="c">// smart cast — user is non-null User</span>
+      &#125;
+  &#125;</div>
+
+      <div class="annotate">
+        <div class="annotate-list">
+          <h4>What the compiler guarantees here</h4>
+          <ul>
+            <li>You cannot construct a <code>User</code> without <code>id</code>, <code>name</code>, <code>email</code>.</li>
+            <li><code>avatarUrl</code> can be null, and the type says so — callers must handle it.</li>
+            <li><code>displayCache</code> is unreachable from outside the class.</li>
+            <li><code>renderName</code> returns <code>String</code>, never <code>String?</code> — the Elvis guarantees it.</li>
+          </ul>
+        </div>
+        <div class="annotate-list">
+          <h4>What was impossible to write wrong</h4>
+          <ul>
+            <li><code>val avatarUrl: String = null</code> — won't compile.</li>
+            <li><code>user.name.length</code> without a null check on <code>user</code> — won't compile.</li>
+            <li>Constructing <code>User(1, "x")</code> missing required params — won't compile.</li>
+            <li>Touching <code>displayCache</code> from outside — won't compile.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- PICKING THE RIGHT TOOL -->
+    <h2>Picking the right null tool: a quick guide</h2>
+
+    <div class="tree">
+      <div class="tree-node">
+        <div class="tree-q">Q1 · "Skip the whole step if it's null."</div>
+        <div class="tree-q-body">Don't compute anything, just bail.</div>
+        <div class="tree-ans ok">→ value?.let &#123; ... &#125; · or return early on null</div>
+      </div>
+
+      <div class="tree-node">
+        <div class="tree-q">Q2 · "I have a sensible default."</div>
+        <div class="tree-q-body">Empty string, 0, "Anonymous", empty list.</div>
+        <div class="tree-ans ok">→ value ?: default</div>
+      </div>
+
+      <div class="tree-node">
+        <div class="tree-q">Q3 · "Missing here is a programmer bug, not a runtime fact."</div>
+        <div class="tree-q-body">The value should have been there — if it isn't, fail loudly.</div>
+        <div class="tree-ans">→ value ?: error("message") · or value!! + a comment</div>
+      </div>
+
+      <div class="tree-node">
+        <div class="tree-q">Q4 · "I've already checked — the compiler just doesn't know yet."</div>
+        <div class="tree-q-body">Use a smart-cast-friendly form: <code>if (x != null) ...</code>, <code>x?.let &#123; ... &#125;</code>, <code>x ?: return</code>.</div>
+        <div class="tree-ans ok">→ don't write a cast. Write the check.</div>
+      </div>
+    </div>
+
+    <!-- RECIPES -->
+    <h2>Common patterns (copy these)</h2>
+
+    <div class="recipes">
+      <div class="recipe">
+        <div class="recipe-name">?.let — do something, only if present</div>
+        <div class="recipe-desc">Most common pattern. The block has a non-null value inside.</div>
+        <div class="code"><span class="k">val</span> greeting = user?.<span class="fn">name</span>?.<span class="fn">let</span> &#123; <span class="s">"Hello, </span><span class="th">$it</span><span class="s">!"</span> &#125;
+  <span class="c">// null if user is null OR name is null</span></div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">?: chain — fall through multiple defaults</div>
+        <div class="recipe-desc">First non-null wins.</div>
+        <div class="code"><span class="k">val</span> display = user.nickname
+      ?: user.name
+      ?: <span class="s">"Anonymous"</span></div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">?: return — early-exit on null</div>
+        <div class="recipe-desc">Cleanest way to handle "if missing, this whole function is moot."</div>
+        <div class="code"><span class="k">fun</span> <span class="fn">show</span>(u: <span class="t">User</span>?) &#123;
+      <span class="k">val</span> user = u ?: <span class="k">return</span>     <span class="c">// bail if null</span>
+      <span class="c">// `user` is smart-cast to non-null User</span>
+      <span class="fn">println</span>(user.name)
+  &#125;</div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">takeIf / takeUnless</div>
+        <div class="recipe-desc">Returns the value if a predicate holds; null otherwise. Often replaces <code>if</code> statements.</div>
+        <div class="code"><span class="k">val</span> even = n.<span class="fn">takeIf</span> &#123; <span class="it">it</span> % <span class="n">2</span> == <span class="n">0</span> &#125;   <span class="c">// n if even, else null</span>
+  <span class="k">val</span> admin = user.<span class="fn">takeUnless</span> &#123; <span class="it">it</span>.banned &#125;</div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">requireNotNull — fail fast on programmer error</div>
+        <div class="recipe-desc">Like Elvis with a throw, but with a clearer name and message.</div>
+        <div class="code"><span class="k">val</span> u = <span class="fn">requireNotNull</span>(maybeUser) &#123;
+      <span class="s">"user must be loaded before calling render()"</span>
+  &#125;
+  <span class="c">// u is now smart-cast to non-null User</span></div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">Safe cast as?</div>
+        <div class="recipe-desc">Like Java's <code>instanceof</code>, but returns null instead of throwing on mismatch.</div>
+        <div class="code"><span class="k">val</span> admin = user <span class="k">as?</span> <span class="t">Admin</span>   <span class="c">// Admin? — null if user isn't one</span>
+  admin?.<span class="fn">grant</span>(<span class="t">Permission</span>.<span class="v">ALL</span>)</div>
+      </div>
+    </div>
+
+    <!-- RECAP -->
+    <div class="recap">
+      <h2><span class="num">↺</span>Recap in one minute</h2>
+      <p>
+        Four class features, one null-safety mental model, one goal:
+        <em>make impossible states impossible at the type level.</em>
+      </p>
+      <div class="recap-grid">
+        <div class="recap-item">
+          <div class="lbl">primary constructor</div>
+          <div class="desc">In the class header. Declares required state and publishes <code>val</code>/<code>var</code> properties in one step. Pairs with <code>init &#123; &#125;</code> for invariants.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">secondary constructor</div>
+          <div class="desc">Alternative entry point. Delegates to the primary with <code>: this(...)</code>. Use sparingly — usually a named factory in a companion object is cleaner.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">properties</div>
+          <div class="desc"><code>val</code> = read-only field, <code>var</code> = mutable, both with optional <code>get()</code>/<code>set(value)</code> accessors. <code>field</code> inside refers to the backing storage.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">visibility</div>
+          <div class="desc">Default is <code>public</code>. <code>private</code> = this scope, <code>protected</code> = this scope + subclasses, <code>internal</code> = same module.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">String vs String?</div>
+          <div class="desc">The mental shift. <code>T</code> and <code>T?</code> are different types. The compiler tracks nullability for you — you can't call methods on a <code>T?</code> without acknowledging the null.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">?., ?:, let, smart cast, !!</div>
+          <div class="desc">Five ways to cross the null boundary. <code>?.</code> = skip if null, <code>?:</code> = default, <code>?.let</code> = scoped block, smart cast = the compiler trusts your check, <code>!!</code> = escape hatch (use as a last resort).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="end">
+      Four class features for <em>declaring</em> what a thing is.
+      Null safety for <em>proving</em> it can never be the wrong shape.
+      Same goal, different language: <em>impossible states should be impossible to write.</em>
+    </div>
+</LessonLayout>
+
+<style>
+/* ==== Page-specific: impossible states map ==== */
+  .map { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 40px 0; }
+  .map-title { text-align: center; color: var(--ink-soft); font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 24px; }
+  .map-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  .map-table th { text-align: left; padding: 12px 16px; color: var(--ink-soft); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 2px solid var(--line); }
+  .map-table td { padding: 14px 16px; border-bottom: 1px solid var(--line-soft); color: var(--ink-mid); vertical-align: top; }
+  .map-table tr:last-child td { border-bottom: none; }
+  .map-table .feat { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--primary); font-weight: 600; white-space: nowrap; }
+  .map-table .stops { color: var(--ink); font-style: italic; }
+  .map-table .lvl { font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .map-table .lvl.syn { color: var(--ink-soft); }
+  .map-table .lvl.model { color: var(--primary); font-weight: 700; }
+
+  /* ==== Page-specific: null-safety big section divider ==== */
+  .big-section { margin: 80px 0 0; padding: 36px; background: linear-gradient(135deg, #ebe3ee 0%, #f5e6d3 100%); border: 1px solid var(--line); border-radius: var(--r-2xl); }
+  .big-section .tag { display: inline-block; color: var(--primary); background: white; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 6px 14px; border-radius: 20px; margin-bottom: 16px; }
+  .big-section h2 { margin-top: 0; font-size: 40px; }
+  .big-section p { font-size: 17px; color: var(--ink-mid); max-width: 680px; }
+
+  /* ==== Page-specific: null-safety flow rows ==== */
+  .ns-flow { display: grid; grid-template-columns: 1fr; gap: var(--space-4); margin: 24px 0; }
+  .ns-row { display: grid; grid-template-columns: 180px 1fr; gap: 20px; align-items: stretch; background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px 24px; }
+  @media (max-width: 720px) { .ns-row { grid-template-columns: 1fr; } }
+  .ns-op { display: flex; flex-direction: column; justify-content: center; padding-right: 20px; border-right: 1px solid var(--line-soft); }
+  @media (max-width: 720px) { .ns-op { border-right: none; border-bottom: 1px solid var(--line-soft); padding-right: 0; padding-bottom: 12px; } }
+  .ns-op .op-name { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 22px; font-weight: 600; color: var(--primary); }
+  .ns-op .op-when { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+  .ns-body { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+  .ns-body p { margin: 0; font-size: 14.5px; color: var(--ink-mid); }
+  .ns-body .code { margin: 0; font-size: 13px; padding: 14px 18px; }
+  .ns-row.safe { border-left: 3px solid #6f8b6f; }
+  .ns-row.danger { border-left: 3px solid #b06367; }
+  .ns-row.bridge { border-left: 3px solid var(--accent); }
+
+  /* ==== Page-specific: smart cast timeline ==== */
+  .smartcast { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 32px 0; }
+  .sc-step { display: grid; grid-template-columns: 100px 1fr; gap: var(--space-4); padding: 12px 0; align-items: center; }
+  .sc-step + .sc-step { border-top: 1px dashed var(--line); }
+  .sc-step .sc-line-num { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-soft); text-align: right; }
+  .sc-step .sc-type { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; display: inline-block; padding: 2px 8px; border-radius: 4px; margin-right: 8px; }
+  .sc-step .sc-type.nullable { background: #f0d8d8; color: #b06367; }
+  .sc-step .sc-type.nonnull { background: #dde6dd; color: #6f8b6f; }
+  .sc-step .sc-desc { font-size: 14px; color: var(--ink-mid); }
+  .sc-step .sc-desc code { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: var(--line-soft); color: var(--primary); padding: 1px 5px; border-radius: 3px; }
+</style>

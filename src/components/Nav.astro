@@ -1,0 +1,162 @@
+---
+/**
+ * Top navigation. Sticky on scroll, responsive on mobile.
+ * Shows current lesson position and prev/next links.
+ */
+
+export interface Props {
+  /** 1-5; the current lesson number. 0 means we're on the landing page. */
+  current?: number;
+}
+
+const { current = 0 } = Astro.props;
+
+const lessons = [
+  { num: 1, title: 'Syntax', slug: '01-syntax' },
+  { num: 2, title: 'Classes + null', slug: '02-classes-null-safety' },
+  { num: 3, title: 'Data modeling', slug: '03-data-modeling' },
+  { num: 4, title: 'Scope functions', slug: '04-scope-functions' },
+  { num: 5, title: 'Functional', slug: '05-functional' },
+];
+
+const prev = current > 1 ? lessons[current - 2] : null;
+const next = current > 0 && current < lessons.length ? lessons[current] : null;
+const homeHref = current === 0 ? '/' : '/';
+---
+
+<header class="topnav">
+  <div class="topnav-inner">
+    <a class="brand" href={homeHref} aria-label="Kotlin series — home">
+      <span class="brand-mark" aria-hidden="true">K</span>
+      <span class="brand-text">
+        <span class="brand-line1">Kotlin</span>
+        <span class="brand-line2">5 connected ideas</span>
+      </span>
+    </a>
+
+    {current > 0 && (
+      <div class="lesson-pill" aria-label={`Lesson ${current} of ${lessons.length}`}>
+        <span class="pill-num">{String(current).padStart(2, '0')}</span>
+        <span class="pill-sep">/</span>
+        <span class="pill-total">{String(lessons.length).padStart(2, '0')}</span>
+      </div>
+    )}
+
+    <nav class="topnav-links" aria-label="Lesson navigation">
+      {prev && (
+        <a class="nav-link prev" href={`/${prev.slug}/`} rel="prev">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          <span class="nav-label">{prev.title}</span>
+        </a>
+      )}
+      {next && (
+        <a class="nav-link next" href={`/${next.slug}/`} rel="next">
+          <span class="nav-label">{next.title}</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      )}
+    </nav>
+  </div>
+</header>
+
+<style>
+  .topnav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topnav-inner {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 14px var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--ink);
+    text-decoration: none;
+    flex: 1;
+    min-width: 0;
+  }
+  .brand-mark {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "DM Serif Display", Georgia, serif;
+    font-size: 20px;
+    font-weight: 400;
+    flex-shrink: 0;
+  }
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+    min-width: 0;
+  }
+  .brand-line1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .brand-line2 {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+  }
+  .lesson-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: var(--primary-soft);
+    border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+    border-radius: 100px;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+  .pill-sep { opacity: 0.4; padding: 0 2px; }
+  .pill-total { opacity: 0.6; }
+  .topnav-links {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    color: var(--ink-mid);
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-link:hover {
+    background: var(--line-soft);
+    color: var(--ink);
+  }
+  @media (max-width: 720px) {
+    .topnav-inner { padding: 12px 16px; gap: 8px; }
+    .brand-line2 { display: none; }
+    .nav-label { display: none; }
+    .nav-link { padding: 8px; }
+    .lesson-pill { padding: 5px 10px; font-size: 11px; }
+  }
+  @media (max-width: 420px) {
+    .lesson-pill { display: none; }
+  }
+</style>

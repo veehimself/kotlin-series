@@ -1,0 +1,70 @@
+name: Deploy to GitHub Pages
+
+# Triggers: every push to main, plus manual dispatch.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Required for the deploy step to publish.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Don't run multiple deploys at once; cancel in-progress runs on new pushes.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Astro + Vite
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.astro
+            node_modules/.vite
+          key: ${{ runner.os }}-astro-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-astro-
+
+      - name: Install dependencies
+        # Use plain `bun install` (not --frozen-lockfile) so the first
+        # CI run can create bun.lockb. Commit the generated lockfile
+        # afterwards for reproducible installs.
+        run: bun install
+
+      - name: Build site
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: bun run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

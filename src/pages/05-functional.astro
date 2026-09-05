@@ -1,0 +1,686 @@
+---
+import LessonLayout from '../layouts/LessonLayout.astro';
+---
+
+<LessonLayout
+  title='Functional Kotlin'
+  description='Lambdas, higher-order functions, and the collection ops (map, filter, reduce, groupBy) as pre-written HOFs.'
+  number=5
+  primary='#3d5a80'
+  accent='#e07a5f'
+>
+  <div class="eyebrow">Kotlin · Functional style</div>
+    <h1>Functional Kotlin, as <em>one</em> shift in thinking.</h1>
+    <p class="lede">
+      Lambdas, higher-order functions, <code>map</code>, <code>filter</code>,
+      <code>reduce</code>, <code>groupBy</code> — they look like six features, but
+      they all rest on a single move: <strong>treat behavior as a value you can pass
+      around, just like a number or a string.</strong>
+    </p>
+
+    <div class="meta">
+      <span>⏱ ~11 min read</span>
+      <span>🎯 Early intermediate</span>
+      <span>🧠 Mental model first, syntax second</span>
+    </div>
+
+    <!-- THE BIG QUESTION -->
+    <div class="question">
+      <div class="question-label">The shift behind all six</div>
+      <p class="question-text">
+        What if a function could be a value — stored in a variable, passed as an
+        argument, returned from another function?
+        <br><br>
+        Once that clicks, <em>every</em> feature on this page becomes "just a different
+        way of using function-values."
+      </p>
+    </div>
+
+    <!-- THE BEHAVIOR-AS-VALUE DIAGRAM -->
+    <div class="bav">
+      <div class="bav-caption">The shift, in one picture</div>
+      <div class="bav-row">
+        <div class="bav-box data">
+          <div class="lbl">Before</div>
+          <div class="val">x = <span style="color: var(--sage);">42</span></div>
+        </div>
+        <div class="bav-arrow">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </div>
+        <div class="bav-box fn">
+          <div class="lbl">After</div>
+          <div class="val">f = <span style="color: var(--accent);">&#123; x → x + 1 &#125;</span></div>
+        </div>
+        <div class="bav-arrow">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </div>
+        <div class="bav-box both">
+          <div class="lbl">Result</div>
+          <div class="val" style="font-size: 13px;">A whole new category<br>of code</div>
+        </div>
+      </div>
+      <p style="text-align: center; color: var(--ink-soft); font-size: 13.5px; margin: 16px 0 0;">
+        A lambda is a function-value. A higher-order function is one that <em>accepts</em> or
+        <em>returns</em> such a value. <code>map</code>/<code>filter</code>/<code>reduce</code>/<code>groupBy</code>
+        are higher-order functions the standard library already wrote for you.
+      </p>
+    </div>
+
+    <!-- 1. LAMBDAS -->
+    <h2><span class="num">1</span>lambdas — behavior as a value</h2>
+
+    <p>
+      A lambda is just a function with no name. The braces say "here's a value."
+      Inside, you declare the parameters with <code>-&gt;</code> and the body is
+      the last expression (or whatever <code>return</code> statements you add).
+    </p>
+
+    <div class="concept" data-t="lambda">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17s.5-4 2-4 1.5 4 3 4 2-4 4-4 1.5 4 3 4 2-4 4-4"/><path d="M4 17v3"/><path d="M20 17v3"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">lambda</h3>
+          <div class="concept-sub">&#123; params -> body &#125; · stored in variables, passed to functions, returned</div>
+        </div>
+      </div>
+      <p class="concept-tagline">
+        A lambda is a value of type <code>(InputTypes) -&gt; ReturnType</code>.
+        You can put it in a variable, hand it to a function, or build one on the fly.
+      </p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// The four ways to write the same function-value</span>
+
+  <span class="c">// 1. Stored in a variable</span>
+  <span class="k">val</span> <span class="v">double</span>: (<span class="t">Int</span>) -&gt; <span class="t">Int</span> = &#123; <span class="v">x</span> -&gt; x * <span class="n">2</span> &#125;
+  <span class="fn">double</span>(<span class="n">5</span>)   <span class="c">// 10</span>
+
+  <span class="c">// 2. Single param shortcut: `it`</span>
+  <span class="k">val</span> <span class="v">triple</span>: (<span class="t">Int</span>) -&gt; <span class="t">Int</span> = &#123; <span class="it">it</span> * <span class="n">3</span> &#125;
+
+  <span class="c">// 3. Multi-param, explicit types</span>
+  <span class="k">val</span> <span class="v">add</span>: (<span class="t">Int</span>, <span class="t">Int</span>) -&gt; <span class="t">Int</span> = &#123; a, b -&gt; a + b &#125;
+
+  <span class="c">// 4. Inline, passed straight to a function (trailing-lambda syntax)</span>
+  <span class="fn">listOf</span>(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>).<span class="fn">map</span> &#123; <span class="it">it</span> * <span class="n">2</span> &#125;   <span class="c">// [2, 4, 6]</span></div>
+
+      <div class="concept-line">
+        <strong>The key mental model:</strong> <code>&#123; x -&gt; x + 1 &#125;</code> is a value
+        the same way <code>42</code> is a value. You can hold it, hand it off, return it.
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Trailing-lambda syntax</strong> is the reason Kotlin's collection ops
+      read so well: when a function's <em>last parameter</em> is a function, you can
+      move the lambda <em>outside</em> the parentheses. <code>map(items) &#123; it * 2 &#125;</code>
+      is the same call as <code>map(items, &#123; it * 2 &#125;)</code>, but reads like a sentence.
+    </div>
+
+    <!-- 2. HIGHER-ORDER FUNCTIONS -->
+    <h2><span class="num">2</span>higher-order functions — code that takes code</h2>
+
+    <p>
+      A higher-order function is a function whose <em>parameters</em> or
+      <em>return type</em> is a function. The pattern is everywhere once you
+      see it: <em>"I know what to loop over; you tell me what to do at each step."</em>
+    </p>
+
+    <div class="concept" data-t="hof">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M14 9h4"/><path d="M14 13h4"/><path d="M14 17h4"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">higher-order function (HOF)</h3>
+          <div class="concept-sub">fun ... (transform: (T) -> R): R — accepts or returns a function</div>
+        </div>
+      </div>
+      <p class="concept-tagline">
+        You write the scaffolding. The caller fills in the behavior. This is the
+        move that lets the standard library ship <code>map</code>, <code>filter</code>,
+        and the rest once, and you reuse them for any type and any transformation.
+      </p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// Build your own "map" — it takes a function and a list, returns a list</span>
+  <span class="k">fun</span> &lt;<span class="t">T</span>, <span class="t">R</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;.<span class="fn">myMap</span>(transform: (<span class="t">T</span>) -&gt; <span class="t">R</span>): <span class="t">List</span>&lt;<span class="t">R</span>&gt; &#123;
+      <span class="k">val</span> out = <span class="t">ArrayList</span>&lt;<span class="t">R</span>&gt;(<span class="th">size</span>)
+      <span class="k">for</span> (x <span class="k">in</span> <span class="th">this</span>) out.<span class="fn">add</span>(<span class="fn">transform</span>(x))
+      <span class="k">return</span> out
+  &#125;
+
+  <span class="c">// Caller supplies the behavior:</span>
+  <span class="fn">listOf</span>(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>).<span class="fn">myMap</span> &#123; <span class="it">it</span> * <span class="n">10</span> &#125;   <span class="c">// [10, 20, 30]</span>
+  <span class="fn">listOf</span>(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>).<span class="fn">myMap</span> &#123; <span class="it">it</span>.<span class="fn">toString</span>() &#125;   <span class="c">// ["1", "2", "3"]</span></div>
+
+      <div class="concept-line">
+        <strong>The win:</strong> you wrote the loop <em>once</em>. The caller writes
+        only the part that's unique to their case. This is why a tiny HOF + 100
+        lambdas beats 100 hand-written loops.
+      </div>
+    </div>
+
+    <p>
+      The collection operations in the next section are exactly this — HOFs the
+      standard library already wrote, specialized for the most common patterns.
+      <code>map</code> = "loop and transform." <code>filter</code> = "loop and keep some."
+      Once you see the pattern, you can read any of them.
+    </p>
+
+    <!-- 3-6. COLLECTION OPS - THE SHAPES -->
+    <h2><span class="num">3</span>collection ops — HOFs the standard library wrote for you</h2>
+
+    <p>
+      Forget the names for a moment. Each of these is a HOF that walks a collection
+      and applies your lambda. The difference is <strong>what shape comes out</strong>:
+    </p>
+
+    <ul>
+      <li><strong>Same size, different type</strong> → <code>map</code></li>
+      <li><strong>Smaller (or same), same type</strong> → <code>filter</code></li>
+      <li><strong>One value, any type</strong> → <code>reduce</code> / <code>fold</code></li>
+      <li><strong>Grouped into buckets</strong> → <code>groupBy</code></li>
+    </ul>
+
+    <div class="shapes">
+      <div class="shapes-title">The four shapes — what comes out</div>
+      <div class="shape-grid">
+
+        <div class="shape-card">
+          <div class="shape-name">map &#123; f &#125;</div>
+          <div class="shape-shape">List&lt;T&gt; → List&lt;R&gt; · 1-to-1</div>
+          <div class="shape-viz">
+            <div class="dot">1</div>
+            <div class="dot">2</div>
+            <div class="dot">3</div>
+            <span class="arrow">→</span>
+            <div class="dot" style="background: var(--primary);">a</div>
+            <div class="dot" style="background: var(--primary);">b</div>
+            <div class="dot" style="background: var(--primary);">c</div>
+          </div>
+          <div class="shape-desc">
+            Every element becomes <em>exactly one</em> new element. <code>map &#123; it * 2 &#125;</code>
+            on <code>[1,2,3]</code> gives <code>[2,4,6]</code>. Same length, possibly different type.
+          </div>
+        </div>
+
+        <div class="shape-card">
+          <div class="shape-name">filter &#123; p &#125;</div>
+          <div class="shape-shape">List&lt;T&gt; → List&lt;T&gt; · 1-to-0-or-1</div>
+          <div class="shape-viz">
+            <div class="dot">1</div>
+            <div class="dot out">2</div>
+            <div class="dot">3</div>
+            <div class="dot out">4</div>
+            <div class="dot">5</div>
+            <span class="arrow">→</span>
+            <div class="dot" style="background: #6a8aaf;">1</div>
+            <div class="dot" style="background: #6a8aaf;">3</div>
+            <div class="dot" style="background: #6a8aaf;">5</div>
+          </div>
+          <div class="shape-desc">
+            Each element either <em>stays or goes</em> based on a predicate (lambda returning <code>Boolean</code>).
+            <code>filter &#123; it % 2 == 1 &#125;</code> on odds.
+          </div>
+        </div>
+
+        <div class="shape-card">
+          <div class="shape-name">reduce &#123; acc, x -&gt; ... &#125;</div>
+          <div class="shape-shape">List&lt;T&gt; → T · many-to-1</div>
+          <div class="shape-viz">
+            <div class="dot">1</div>
+            <div class="dot">2</div>
+            <div class="dot">3</div>
+            <div class="dot">4</div>
+            <span class="arrow">→</span>
+            <div class="one">10</div>
+          </div>
+          <div class="shape-desc">
+            Combine <em>all</em> elements into one. Starts with the first element as
+            the accumulator. Same type in and out. <code>reduce &#123; a, b -&gt; a + b &#125;</code> on <code>[1,2,3,4]</code> gives <code>10</code>.
+          </div>
+        </div>
+
+        <div class="shape-card">
+          <div class="shape-name">groupBy &#123; k &#125;</div>
+          <div class="shape-shape">List&lt;T&gt; → Map&lt;K, List&lt;T&gt;&gt; · 1-to-1 (but bucketed)</div>
+          <div class="shape-viz">
+            <div class="dot">a1</div>
+            <div class="dot">b1</div>
+            <div class="dot">a2</div>
+            <div class="dot">b2</div>
+            <span class="arrow">→</span>
+            <div class="bucket">"a" → [a1, a2]</div>
+            <div class="bucket">"b" → [b1, b2]</div>
+          </div>
+          <div class="shape-desc">
+            Each element goes into <em>exactly one bucket</em>, keyed by what the lambda returns.
+            The result is a <code>Map</code>. <code>groupBy &#123; it.first() &#125;</code> on words → words grouped by first letter.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p>
+      Read those four cards as <strong>one table</strong>: same input shape (a list),
+      four different "what to do per element" lambdas, four different output shapes.
+      The lambda is the variable. The op is the loop. The shape is the result.
+    </p>
+
+    <!-- Each in depth -->
+    <h2><span class="num">M</span>map — the workhorse transform</h2>
+
+    <div class="concept" data-t="map">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="m9 6 3 14 3-14"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">map(transform)</h3>
+          <div class="concept-sub">List&lt;T&gt;.map &#123; T -&gt; R &#125; → List&lt;R&gt; · 1-to-1, each element transformed</div>
+        </div>
+      </div>
+
+      <div class="pair">
+        <div>
+          <div class="pair-label bad">Imperative</div>
+          <div class="code"><span class="k">val</span> names = <span class="t">ArrayList</span>&lt;<span class="t">String</span>&gt;()
+  <span class="k">for</span> (u <span class="k">in</span> users) &#123;
+      names.<span class="fn">add</span>(u.name)
+  &#125;</div>
+        </div>
+        <div>
+          <div class="pair-label good">Functional</div>
+          <div class="code"><span class="k">val</span> names = users.<span class="fn">map</span> &#123; <span class="it">it</span>.name &#125;</div>
+        </div>
+      </div>
+
+      <p>
+        Same answer, one line. The version on the right says <em>what</em> you're
+        doing, not <em>how</em> to do it. That's the whole point of functional style:
+        describe the shape of the result, and let the library handle the iteration.
+      </p>
+    </div>
+
+    <h2><span class="num">F</span>filter — keep what passes the test</h2>
+
+    <div class="concept" data-t="filter">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">filter(predicate)</h3>
+          <div class="concept-sub">List&lt;T&gt;.filter &#123; T -&gt; Boolean &#125; → List&lt;T&gt; · keep where true</div>
+        </div>
+      </div>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">val</span> active = users.<span class="fn">filter</span> &#123; <span class="it">it</span>.active &#125;                    <span class="c">// keep if true</span>
+  <span class="k">val</span> longNames = users.<span class="fn">filter</span> &#123; <span class="it">it</span>.name.length &gt; <span class="n">5</span> &#125;      <span class="c">// any condition</span>
+
+  <span class="c">// filterNot, filterIndexed, filterIsInstance&lt;X&gt;() are variations on the same idea.</span>
+  <span class="k">val</span> failures = results.<span class="fn">filterIsInstance</span>&lt;<span class="t">Result</span>.<span class="t">Failure</span>&gt;()</div>
+
+      <p>
+        The lambda must return <code>Boolean</code> — that's the test. Same input type,
+        smaller output. Combine with <code>map</code> to filter-and-transform in one go.
+      </p>
+    </div>
+
+    <h2><span class="num">R</span>reduce &amp; fold — squash to one value</h2>
+
+    <div class="concept" data-t="reduce">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M3 12h18"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">reduce &#123; acc, x -&gt; next &#125; &nbsp;/&nbsp; fold(initial) &#123; acc, x -&gt; next &#125;</h3>
+          <div class="concept-sub">List&lt;T&gt; → T · all elements combined into one</div>
+        </div>
+      </div>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// reduce: starts with the first element. Same type in and out.</span>
+  <span class="fn">listOf</span>(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>).<span class="fn">reduce</span> &#123; acc, x -&gt; acc + x &#125;   <span class="c">// 10</span>
+
+  <span class="c">// fold: you supply the starting value, and the result type can differ.</span>
+  <span class="fn">listOf</span>(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>).<span class="fn">fold</span>(<span class="n">0</span>) &#123; acc, x -&gt; acc + x &#125;   <span class="c">// 6, starting from 0</span>
+  <span class="fn">listOf</span>(<span class="s">"a"</span>, <span class="s">"b"</span>, <span class="s">"c"</span>).<span class="fn">fold</span>(<span class="s">"start: "</span>) &#123; acc, x -&gt; <span class="s">"</span><span class="th">$acc</span><span class="s">,</span><span class="th">$x</span><span class="s">"</span> &#125;
+  <span class="c">// → "start: ,a,b,c"</span></div>
+
+      <div class="concept-line">
+        <strong>When to pick which:</strong> <code>reduce</code> for "combine same-type things
+        using the first one as the seed" (sum, max, concat). <code>fold</code> for "I have
+        an initial value" or "the result type differs from the input type" (build a
+        string, build a map, count into a different accumulator).
+      </div>
+    </div>
+
+    <h2><span class="num">G</span>groupBy — partition by a key</h2>
+
+    <div class="concept" data-t="groupBy">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">groupBy(keyFn)</h3>
+          <div class="concept-sub">List&lt;T&gt; → Map&lt;K, List&lt;T&gt;&gt; · one bucket per distinct key</div>
+        </div>
+      </div>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">val</span> byDept = employees.<span class="fn">groupBy</span> &#123; <span class="it">it</span>.department &#125;
+  <span class="c">// Map&lt;String, List&lt;Employee&gt;&gt;  — one list per department</span>
+
+  <span class="k">val</span> byLength = words.<span class="fn">groupBy</span> &#123; <span class="it">it</span>.length &#125;
+  <span class="c">// Map&lt;Int, List&lt;String&gt;&gt; — words of length 3, length 4, etc.</span>
+
+  <span class="c">// groupBy can also produce a different value type per bucket:</span>
+  <span class="k">val</span> nameByDept = employees.<span class="fn">groupBy</span>(&#123; <span class="it">it</span>.department &#125;, &#123; <span class="it">it</span>.name &#125;)
+  <span class="c">// Map&lt;String, List&lt;String&gt;&gt;</span></div>
+
+      <p>
+        The lambda returns the <em>key</em> the element belongs in. Same number of
+        elements out, but now structured as a lookup. Often followed by
+        <code>mapValues</code> to compute a per-bucket summary.
+      </p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// "How many people per department?" — groupBy + mapValues + size</span>
+  <span class="k">val</span> countByDept = employees
+      .<span class="fn">groupBy</span> &#123; <span class="it">it</span>.department &#125;
+      .<span class="fn">mapValues</span> &#123; (_, list) -&gt; list.size &#125;
+  <span class="c">// Map&lt;String, Int&gt;</span></div>
+    </div>
+
+    <!-- PIPELINE -->
+    <h2>Composing: the pipeline</h2>
+    <p>
+      None of this is interesting in isolation. The win is that every op <em>returns
+      a collection (or value)</em> you can pipe into the next op. Read the chain
+      left-to-right as a story about your data.
+    </p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-name">.filter &#123; it.active &#125;</div>
+          <div class="step-desc">Keep only the active users. Smaller list, same type.</div>
+          <div class="step-returns">Returns: <code>List&lt;User&gt;</code></div>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-name">.map &#123; it.name &#125;</div>
+          <div class="step-desc">Pull the name out. Same length, different type.</div>
+          <div class="step-returns">Returns: <code>List&lt;String&gt;</code></div>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-name">.sorted()</div>
+          <div class="step-desc">Alphabetize. Same length, same type, reordered.</div>
+          <div class="step-returns">Returns: <code>List&lt;String&gt;</code></div>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">4</div>
+        <div>
+          <div class="step-name">.take(5)</div>
+          <div class="step-desc">Keep the first five. Shorter list.</div>
+          <div class="step-returns">Returns: <code>List&lt;String&gt;</code></div>
+        </div>
+      </div>
+
+      <div class="code" style="margin-top: 20px;"><span class="code-tag">kotlin</span>
+  <span class="k">val</span> topFive = users
+      .<span class="fn">filter</span> &#123; <span class="it">it</span>.active &#125;
+      .<span class="fn">map</span> &#123; <span class="it">it</span>.name &#125;
+      .<span class="fn">sorted</span>()
+      .<span class="fn">take</span>(<span class="n">5</span>)</div>
+
+      <p style="text-align: center; color: var(--ink-soft); font-size: 13.5px; margin: 16px 0 0;">
+        Each step is a verb. Read it like a sentence: "filter to active users,
+        map to their names, sort, take the top five." No <code>for</code> loop in sight.
+      </p>
+    </div>
+
+    <!-- THE SHIFT DIAGRAM -->
+    <h2>The mental shift, side-by-side</h2>
+    <p>
+      Functional style isn't "shorter imperative code." It's a different question.
+      Imperative asks <em>"what steps do I take?"</em> Functional asks
+      <em>"what shape should the result be?"</em>
+    </p>
+
+    <div class="shift">
+      <div class="shift-row">
+        <div class="shift-col imp">
+          <h4>Imperative</h4>
+          <p>You write the loop. You mutate a variable. The reader has to simulate the steps.</p>
+          <div class="code"><span class="k">val</span> total = <span class="n">0</span>
+  <span class="k">for</span> (n <span class="k">in</span> numbers) &#123;
+      total += n
+  &#125;</div>
+        </div>
+        <div class="shift-col func">
+          <h4>Functional</h4>
+          <p>You describe the result. The library walks the data. The reader sees the shape.</p>
+          <div class="code"><span class="k">val</span> total = numbers.<span class="fn">sum</span>()     <span class="c">// or</span>
+  <span class="k">val</span> total = numbers.<span class="fn">reduce</span> &#123; a, b -&gt; a + b &#125;</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>When the functional style shines:</strong> when you're transforming,
+      filtering, summarizing, or grouping data. <strong>When to drop back to imperative:</strong>
+      when you need early-exit, side effects mid-loop, or a complex local state machine
+      that's hard to express as a chain. Both tools, same language.
+    </div>
+
+    <!-- DECISION TREE -->
+    <h2>Picking the right op: a 30-second guide</h2>
+
+    <div class="tree">
+      <div class="tree-node">
+        <div class="tree-q">Q1 · One element out?</div>
+        <div class="tree-q-body">"Sum it / find the max / build a string / count."</div>
+        <div class="tree-ans">→ reduce (same type) / fold (different type or with seed)</div>
+      </div>
+
+      <div class="tree-node">
+        <div class="tree-q">Q2 · Group elements by some category?</div>
+        <div class="tree-q-body">"Group users by department. Bucket words by first letter."</div>
+        <div class="tree-ans">→ groupBy &#123; keyFn &#125;</div>
+      </div>
+
+      <div class="tree-node">
+        <div class="tree-q">Q3 · Same number of elements, but each one is different?</div>
+        <div class="tree-q-body">"Pull the name out. Double every number. Convert to JSON."</div>
+        <div class="tree-ans">→ map &#123; transform &#125;</div>
+      </div>
+
+      <div class="tree-node">
+        <div class="tree-q">Q4 · Smaller list — keep only the ones that pass a test?</div>
+        <div class="tree-q-body">"Only the active users. Only words longer than 5 chars."</div>
+        <div class="tree-ans">→ filter &#123; predicate &#125;</div>
+      </div>
+    </div>
+
+    <div class="pair">
+      <div>
+        <div class="pair-label good">Often combined</div>
+        <div class="code">items
+      .<span class="fn">filter</span> &#123; ... &#125;
+      .<span class="fn">map</span> &#123; ... &#125;
+      .<span class="fn">groupBy</span> &#123; ... &#125;</div>
+      </div>
+      <div>
+        <div class="pair-label neutral">For sequences: asSequence()</div>
+        <div class="code"><span class="c">// Each op on a List builds a new list.</span>
+  <span class="c">// asSequence() fuses them — lazy, one pass, big perf win on huge data.</span>
+  items.<span class="fn">asSequence</span>()
+      .<span class="fn">filter</span> &#123; ... &#125;
+      .<span class="fn">map</span> &#123; ... &#125;
+      .<span class="fn">toList</span>()</div>
+      </div>
+    </div>
+
+    <!-- RECIPES -->
+    <h2>Common patterns (copy these)</h2>
+
+    <div class="recipes">
+      <div class="recipe">
+        <div class="recipe-name">Sum / count with reduce</div>
+        <div class="recipe-desc">Collapse a list to one value.</div>
+        <div class="code"><span class="k">val</span> total = prices.<span class="fn">reduce</span> &#123; a, b -&gt; a + b &#125;
+  <span class="c">// or just: prices.sum()</span></div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">Filter + map pipeline</div>
+        <div class="recipe-desc">Keep the ones you want, project to the field you need.</div>
+        <div class="code"><span class="k">val</span> names = users
+      .<span class="fn">filter</span> &#123; <span class="it">it</span>.age &gt;= <span class="n">18</span> &#125;
+      .<span class="fn">map</span> &#123; <span class="it">it</span>.name &#125;</div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">Index lookup with associateBy</div>
+        <div class="recipe-desc">Turn a list into a map keyed by some field.</div>
+        <div class="code"><span class="k">val</span> byId = users.<span class="fn">associateBy</span> &#123; <span class="it">it</span>.id &#125;
+  <span class="c">// Map&lt;Long, User&gt;  — byId[42L] in O(1)</span></div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">Per-group summary</div>
+        <div class="recipe-desc">groupBy then mapValues to compute something per bucket.</div>
+        <div class="code"><span class="k">val</span> avgAgeByDept = employees
+      .<span class="fn">groupBy</span> &#123; <span class="it">it</span>.dept &#125;
+      .<span class="fn">mapValues</span> &#123; (_, list) -&gt; list.<span class="fn">map</span> &#123; <span class="it">it</span>.age &#125;.<span class="fn">average</span>() &#125;</div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">firstOrNull with a predicate</div>
+        <div class="recipe-desc">Find one matching element, or null.</div>
+        <div class="code"><span class="k">val</span> admin = users.<span class="fn">firstOrNull</span> &#123; <span class="it">it</span>.role == <span class="s">"admin"</span> &#125;</div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">partition: two lists in one pass</div>
+        <div class="recipe-desc">Split a list into "passed" and "failed" by a test.</div>
+        <div class="code"><span class="k">val</span> (passed, failed) = scores.<span class="fn">partition</span> &#123; <span class="it">it</span> &gt;= <span class="n">60</span> &#125;</div>
+      </div>
+    </div>
+
+    <!-- RECAP -->
+    <div class="recap">
+      <h2><span class="num">↺</span>Recap in one minute</h2>
+      <p>
+        Six features, one shift: <em>treat behavior as a value.</em> Everything on this
+        page is a different angle on that single move.
+      </p>
+      <div class="recap-grid">
+        <div class="recap-item">
+          <div class="lbl">lambda</div>
+          <div class="desc">A function-as-value, written in <code>&#123; x -&gt; ... &#125;</code>. You can store it, pass it, return it. Trailing-lambda syntax makes the call sites read like English.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">higher-order function</div>
+          <div class="desc">A function that takes or returns a function. Separates <em>what to do at each step</em> (the caller's lambda) from <em>how to walk the data</em> (the HOF's job).</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">map</div>
+          <div class="desc">1-to-1. Every element becomes one new element. Same length, possibly different type.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">filter</div>
+          <div class="desc">1-to-0-or-1. Keep elements where the lambda returns <code>true</code>. Smaller (or same) list.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">reduce / fold</div>
+          <div class="desc">Many-to-1. Combine all elements into one. <code>reduce</code> seeds with the first element; <code>fold</code> takes an explicit seed and can change type.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">groupBy</div>
+          <div class="desc">1-to-1 bucketed. Each element lands in exactly one bucket. Returns a <code>Map&lt;K, List&lt;T&gt;&gt;</code> — often followed by <code>mapValues</code> for per-bucket summaries.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="end">
+      One shift, many tools: <em>behavior becomes a value, the library walks the data,
+      and you describe the shape of the result instead of writing the loop.</em>
+    </div>
+</LessonLayout>
+
+<style>
+/* ==== Page-specific: behavior-as-value diagram (functional) ==== */
+  .bav { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 40px 0; }
+  .bav-row { display: grid; grid-template-columns: 1fr 60px 1fr 60px 1fr; gap: 12px; align-items: center; margin: 16px 0; }
+  @media (max-width: 720px) { .bav-row { grid-template-columns: 1fr; gap: 8px; } .bav-row .arrow { transform: rotate(90deg); margin: 0 auto; } }
+  .bav-box { background: #fbfaf6; border: 2px solid var(--line); border-radius: 12px; padding: 16px 18px; text-align: center; }
+  .bav-box.data { border-color: #6f8b6f; background: #dfeae3; }
+  .bav-box.fn { border-color: var(--accent); background: #f6dcd1; }
+  .bav-box.both { border-color: var(--primary); background: #dde4ee; }
+  .bav-box .lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .bav-box.data .lbl { color: #6f8b6f; }
+  .bav-box.fn .lbl { color: var(--accent); }
+  .bav-box.both .lbl { color: var(--primary); }
+  .bav-box .val { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; color: var(--ink); }
+  .bav-arrow { display: flex; align-items: center; justify-content: center; color: var(--ink-soft); }
+  .bav-caption { text-align: center; color: var(--ink-soft); font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px; }
+
+  /* ==== Page-specific: shapes diagram (the 4 collection ops) ==== */
+  .shapes { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 40px 0; }
+  .shapes-title { text-align: center; color: var(--ink-soft); font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 24px; }
+  .shape-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  @media (max-width: 720px) { .shape-grid { grid-template-columns: 1fr; } }
+  .shape-card { border: 1px solid var(--line-soft); border-radius: 14px; padding: 20px; background: #fbfaf6; }
+  .shape-name { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 18px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .shape-shape { font-size: 13px; color: var(--ink-soft); font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; margin-bottom: 14px; }
+  .shape-viz { display: flex; align-items: center; gap: 8px; padding: 12px; background: white; border: 1px dashed var(--line); border-radius: 8px; font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .shape-viz .dot { width: 24px; height: 24px; border-radius: 50%; background: #6f8b6f; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 11px; }
+  .shape-viz .dot.out { background: var(--ink-soft); opacity: 0.3; text-decoration: line-through; }
+  .shape-viz .arrow { color: var(--primary); }
+  .shape-viz .bucket { background: var(--primary-soft); border: 1px solid var(--primary); border-radius: 6px; padding: 4px 8px; color: var(--primary); font-size: 11px; }
+  .shape-viz .one { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; }
+  .shape-desc { margin-top: 12px; font-size: 13.5px; color: var(--ink-mid); line-height: 1.5; }
+  .shape-desc code { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: var(--line-soft); color: var(--primary); padding: 1px 5px; border-radius: 3px; }
+
+  /* ==== Page-specific: pipeline diagram ==== */
+  .pipeline { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 32px 0; }
+  .pipe-step { display: grid; grid-template-columns: 56px 1fr; gap: var(--space-4); align-items: center; padding: 14px 0; }
+  .pipe-step + .pipe-step { border-top: 1px dashed var(--line); }
+  .pipe-step .step-num { width: 40px; height: 40px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; font-size: 14px; }
+  .pipe-step .step-name { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+  .pipe-step .step-desc { font-size: 13.5px; color: var(--ink-mid); }
+  .pipe-step .step-returns { font-size: 12px; color: var(--ink-soft); font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 4px; }
+  .pipe-step .step-returns code { background: var(--line-soft); color: var(--primary); padding: 1px 6px; border-radius: 3px; }
+
+  /* ==== Page-specific: mental shift panel ==== */
+  .shift { background: linear-gradient(135deg, #ffffff 0%, var(--primary-soft) 100%); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 40px 0; }
+  .shift-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+  @media (max-width: 720px) { .shift-row { grid-template-columns: 1fr; } }
+  .shift-col { background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
+  .shift-col h4 { font-family: "Outfit", sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 8px; }
+  .shift-col.imp h4 { color: #b06367; }
+  .shift-col.func h4 { color: #6f8b6f; }
+  .shift-col p { font-size: 14.5px; color: var(--ink-mid); margin: 0 0 12px; }
+  .shift-col .code { margin: 0; font-size: 12.5px; }
+
+  /* ==== Page-specific: tree-ans with bad/ok variants ==== */
+  .tree-ans.bad { background: #f0d8d8; color: #b06367; }
+  .tree-ans.ok { background: #dde6dd; color: #6f8b6f; }
+</style>

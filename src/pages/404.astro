@@ -1,0 +1,36 @@
+---
+import LessonLayout from '../layouts/LessonLayout.astro';
+---
+
+<LessonLayout
+  title="Page not found"
+  description="The page you were looking for doesn't exist on this Kotlin series."
+  number={0}
+>
+  <div class="eyebrow">404</div>
+  <h1>That lesson doesn't exist (yet).</h1>
+  <p class="lede">
+    The URL you followed points to a page that isn't part of this series.
+    Maybe a typo, maybe a future lesson that hasn't been written yet.
+  </p>
+  <p>
+    <a href="/" class="back-link">← Back to all five lessons</a>
+  </p>
+
+  <style>
+    .back-link {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 12px 20px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-radius: 10px;
+      font-weight: 600;
+      transition: background 0.15s, color 0.15s;
+    }
+    .back-link:hover {
+      background: var(--primary);
+      color: white;
+    }
+  </style>
+</LessonLayout>

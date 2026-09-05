@@ -1,0 +1,701 @@
+---
+import LessonLayout from '../layouts/LessonLayout.astro';
+---
+
+<LessonLayout
+  title='Kotlin syntax — the foundations'
+  description='val/var, types, control flow as expressions, ranges, loops, default and named arguments. The pieces that show up in every program.'
+  number=1
+  primary='#2d3142'
+  accent='#ef8354'
+>
+  <div class="eyebrow">Kotlin · Foundations</div>
+    <h1>Kotlin syntax, as <em>one</em> philosophy: less ceremony, more intent.</h1>
+    <p class="lede">
+      <code>val</code>/<code>var</code>, types, control flow, ranges, loops, function
+      args — they look like six separate topics, but they're really six ways the
+      language removes bookkeeping so your code reads as the <strong>intent</strong>,
+      not the steps.
+    </p>
+
+    <div class="meta">
+      <span>⏱ ~11 min read</span>
+      <span>🎯 Absolute beginner → early intermediate</span>
+      <span>🧠 The through-line: every feature removes ceremony</span>
+    </div>
+
+    <!-- THE BIG QUESTION -->
+    <div class="question">
+      <div class="question-label">The one question behind the whole page</div>
+      <p class="question-text">
+        What if the language <em>removed</em> every piece of syntax whose only job
+        was to satisfy the compiler — and kept only the syntax that describes
+        <strong>what you meant</strong>?
+      </p>
+    </div>
+
+    <!-- THE CEREMONY-REDUCTION MAP -->
+    <div class="reduce">
+      <div class="reduce-title">The same six features, framed as "what ceremony disappears"</div>
+      <table class="reduce-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>What it makes unnecessary</th>
+            <th>What you write instead</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="feat">val (default)</td>
+            <td><span class="gone">`final` keyword · getter boilerplate</span></td>
+            <td><span class="kept">`val name: String`</span></td>
+          </tr>
+          <tr>
+            <td class="feat">Type inference</td>
+            <td><span class="gone">Redundant type annotations the compiler already knows</span></td>
+            <td><span class="kept">`val n = 5` instead of `val n: Int = 5`</span></td>
+          </tr>
+          <tr>
+            <td class="feat">if/when/try as expressions</td>
+            <td><span class="gone">Temporary variables assigned in each branch</span></td>
+            <td><span class="kept">`val x = if (...) a else b`</span></td>
+          </tr>
+          <tr>
+            <td class="feat">Ranges + `in`</td>
+            <td><span class="gone">`i = 0; while (i < 10) ...; i++` ceremony</span></td>
+            <td><span class="kept">`for (i in 1..10) ...`</span></td>
+          </tr>
+          <tr>
+            <td class="feat">for (x in xs)</td>
+            <td><span class="gone">Iterator protocol · index arithmetic · off-by-one worry</span></td>
+            <td><span class="kept">`for (u in users) ...`</span></td>
+          </tr>
+          <tr>
+            <td class="feat">Default + named args</td>
+            <td><span class="gone">Overload explosion · "what was that second bool?"</span></td>
+            <td><span class="kept">`connect(timeout = 5_000, retries = 3)`</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Now walk through each one. They're the same idea — <em>let the language do
+      the bookkeeping, so your code says what it means</em> — applied to six
+      different parts of writing a program.
+    </p>
+
+    <!-- 1. VAL/VAR -->
+    <h2><span class="num">1</span>val vs var — pick the one that matches reality</h2>
+
+    <div class="concept" data-t="valvar">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10"/><path d="M7 12h10"/><path d="M7 17h6"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">val — read-only. var — mutable.</h3>
+          <div class="concept-sub">the reference is what val/var controls · not the object it points to</div>
+        </div>
+      </div>
+      <p class="concept-tagline">
+        <code>val</code> means "this name will always refer to the same object."
+        <code>var</code> means "I intend to reassign it later." The default is
+        <code>val</code>. Use <code>var</code> only when reality requires it.
+      </p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="k">val</span> <span class="v">name</span> = <span class="s">"Mavis"</span>          <span class="c">// can't reassign later — compile error</span>
+  <span class="k">var</span> <span class="v">counter</span> = <span class="n">0</span>             <span class="c">// can reassign: counter++ is fine</span>
+
+  name = <span class="s">"Other"</span>   <span class="c">// ❌ Val cannot be reassigned</span>
+  counter++            <span class="c">// ✅ var allows it</span>
+
+  <span class="c">// val refers to the BINDING, not the object. The object can still mutate:</span>
+  <span class="k">val</span> <span class="v">list</span> = <span class="fn">mutableListOf</span>(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>)
+  list.<span class="fn">add</span>(<span class="n">4</span>)   <span class="c">// ✅ list still refers to the same MutableList, which now has 4 items</span>
+  list = <span class="fn">mutableListOf</span>()   <span class="c">// ❌ can't reassign the val</span></div>
+
+      <div class="ok">
+        <strong>Default rule:</strong> reach for <code>val</code>. Switch to <code>var</code>
+        only when you have a concrete reason. The compiler will warn you if a
+        <code>var</code> could be a <code>val</code> — listen to it.
+      </div>
+    </div>
+
+    <!-- 2. TYPES -->
+    <h2><span class="num">2</span>types — declare them when they add information</h2>
+
+    <div class="concept" data-t="types">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">types</h3>
+          <div class="concept-sub">Basic types · inference · when to be explicit</div>
+        </div>
+      </div>
+      <p class="concept-tagline">
+        Kotlin has all the basic types you'd expect. The headline feature is
+        <strong>type inference</strong>: you only write the type when it adds
+        information. Most of the time, the compiler can read it from the
+        right-hand side.
+      </p>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// Basic types</span>
+  <span class="k">val</span> <span class="v">i</span>: <span class="t">Int</span> = <span class="n">42</span>
+  <span class="k">val</span> <span class="v">l</span>: <span class="t">Long</span> = <span class="n">42L</span>
+  <span class="k">val</span> <span class="v">d</span>: <span class="t">Double</span> = <span class="n">3.14</span>
+  <span class="k">val</span> <span class="v">b</span>: <span class="t">Boolean</span> = <span class="k">true</span>
+  <span class="k">val</span> <span class="v">c</span>: <span class="t">Char</span> = <span class="s">'x'</span>
+  <span class="k">val</span> <span class="v">s</span>: <span class="t">String</span> = <span class="s">"hello"</span>
+
+  <span class="c">// Inference: drop the type when it's obvious</span>
+  <span class="k">val</span> n = <span class="n">42</span>           <span class="c">// Int, inferred</span>
+  <span class="k">val</span> pi = <span class="n">3.14</span>        <span class="c">// Double, inferred</span>
+  <span class="k">val</span> msg = <span class="s">"hi"</span>       <span class="c">// String, inferred</span>
+
+  <span class="c">// String templates — interpolate with $ or $&#123;&#125;</span>
+  <span class="k">val</span> greeting = <span class="s">"Hello, </span><span class="th">$name</span><span class="s">! Next year you'll be </span><span class="th">$&#123;</span>age + <span class="n">1</span><span class="th">&#125;</span><span class="s">."</span></div>
+
+      <div class="concept-line">
+        <strong>When to write the type explicitly:</strong> public function signatures
+        (callers benefit), nullable types (<code>String?</code> — the <code>?</code> matters),
+        and anything the compiler can't infer (e.g. you need a parent type, or the
+        initializer is delayed).
+      </div>
+    </div>
+
+    <!-- 3. CONTROL FLOW AS EXPRESSIONS -->
+    <h2><span class="num">3</span>control flow as expressions — the biggest mental shift</h2>
+
+    <p>
+      In most languages, <code>if</code> and <code>switch</code> are <em>statements</em>:
+      they do something. In Kotlin, they're <em>expressions</em>: they produce a
+      value. Same for <code>try</code>. This single change eliminates a huge class
+      of "assign a temporary in each branch" code.
+    </p>
+
+    <h3><code>if</code> as expression</h3>
+
+    <div class="pair">
+      <div>
+        <div class="pair-label bad">Statement-style (other languages)</div>
+        <div class="code"><span class="t">String</span> result;
+  <span class="k">if</span> (score &gt;= <span class="n">60</span>) &#123;
+      result = <span class="s">"pass"</span>;
+  &#125; <span class="k">else</span> &#123;
+      result = <span class="s">"fail"</span>;
+  &#125;</div>
+      </div>
+      <div>
+        <div class="pair-label good">Expression-style (Kotlin)</div>
+        <div class="code"><span class="k">val</span> result = <span class="k">if</span> (score &gt;= <span class="n">60</span>) <span class="s">"pass"</span> <span class="k">else</span> <span class="s">"fail"</span></div>
+      </div>
+    </div>
+
+    <div class="concept" data-t="if">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">if / else — returns the chosen value</h3>
+          <div class="concept-sub">val x = if (cond) a else b · no temporary needed</div>
+        </div>
+      </div>
+      <p>
+        The whole <code>if/else</code> block is a value. The compiler checks that
+        every path produces something. The "no else" branch implicitly returns
+        <code>Unit</code> — Kotlin's "no useful return" type.
+      </p>
+    </div>
+
+    <h3><code>when</code> as expression</h3>
+
+    <p>
+      <code>when</code> is Kotlin's switch replacement — but it returns a value, it
+      matches more than just constants (ranges, types, arbitrary expressions), and
+      you don't need explicit <code>break</code>.
+    </p>
+
+    <div class="concept" data-t="when">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M3 12h18"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">when — the multi-arm expression</h3>
+          <div class="concept-sub">when (x) &#123; 1 -> ... ; in 2..10 -> ... ; is String -> ... &#125;</div>
+        </div>
+      </div>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// As an expression — the whole thing is a value</span>
+  <span class="k">val</span> label = <span class="k">when</span> (status) &#123;
+      <span class="v">PENDING</span> -&gt; <span class="s">"Waiting"</span>
+      <span class="v">SHIPPED</span> -&gt; <span class="s">"On the way"</span>
+      <span class="v">DELIVERED</span> -&gt; <span class="s">"Arrived"</span>
+      <span class="v">CANCELLED</span> -&gt; <span class="s">"Done"</span>
+  &#125;
+
+  <span class="c">// `when` as a STATEMENT (no value, just side effects) is also valid:</span>
+  <span class="k">when</span> (status) &#123;
+      <span class="v">PENDING</span> -&gt; <span class="fn">notifyUser</span>()
+      <span class="v">SHIPPED</span> -&gt; <span class="fn">startTracking</span>()
+      <span class="k">else</span> -&gt; &#123;&#125;   <span class="c">// not required when used as a statement</span>
+  &#125;</div>
+
+      <div class="concept-line">
+        <strong>When used as an expression, <code>when</code> must be exhaustive.</strong>
+        The compiler will tell you if a case is missing. This is the same
+        "impossible states" idea from the sealed class lesson — <code>when</code>
+        over a sealed class is a compile-time check.
+      </div>
+    </div>
+
+    <h3><code>try</code> as expression</h3>
+
+    <div class="concept" data-t="try">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">try / catch — also returns a value</h3>
+          <div class="concept-sub">val n = try &#123; parse(s) &#125; catch (e: Exception) &#123; -1 &#125;</div>
+        </div>
+      </div>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// The whole try/catch produces a value — last expression wins</span>
+  <span class="k">val</span> n = <span class="k">try</span> &#123;
+      s.<span class="fn">toInt</span>()
+  &#125; <span class="k">catch</span> (e: <span class="t">NumberFormatException</span>) &#123;
+      -<span class="n">1</span>
+  &#125;
+
+  <span class="c">// try can also have a `finally` — but finally doesn't contribute to the value</span></div>
+    </div>
+
+    <div class="ok">
+      <strong>The mental model:</strong> if a block has a "last expression," that
+      expression is the block's value. <code>if</code>, <code>when</code>, and
+      <code>try</code> all follow this rule. You stop needing temporary variables
+      to hold a result across branches.
+    </div>
+
+    <!-- 4. RANGES -->
+    <h2><span class="num">4</span>ranges — "from X to Y" is a first-class value</h2>
+
+    <p>
+      Kotlin makes "a span of integers" a real object. You build them with
+      operators, use them with <code>in</code> / <code>!in</code>, and iterate
+      them with <code>for</code>. No <code>i &lt; n</code> ceremony, no off-by-one
+      worry unless you actually want one.
+    </p>
+
+    <div class="ranges">
+      <div class="range-row">
+        <div class="range-syntax">1..5</div>
+        <div class="range-viz">
+          <div class="range-cell edge">1</div>
+          <div class="range-cell in">2</div>
+          <div class="range-cell in">3</div>
+          <div class="range-cell in">4</div>
+          <div class="range-cell edge">5</div>
+        </div>
+        <div class="range-desc"><strong>Inclusive</strong> on both ends. <code>1..5</code> is 1, 2, 3, 4, 5.</div>
+      </div>
+
+      <div class="range-row">
+        <div class="range-syntax">1 until 5</div>
+        <div class="range-viz">
+          <div class="range-cell edge">1</div>
+          <div class="range-cell in">2</div>
+          <div class="range-cell in">3</div>
+          <div class="range-cell in">4</div>
+          <div class="range-cell">5</div>
+        </div>
+        <div class="range-desc"><strong>End-exclusive.</strong> 1, 2, 3, 4 — useful for "index from 0 to size."</div>
+      </div>
+
+      <div class="range-row">
+        <div class="range-syntax">1..10 step 2</div>
+        <div class="range-viz">
+          <div class="range-cell edge">1</div>
+          <div class="range-cell">2</div>
+          <div class="range-cell in">3</div>
+          <div class="range-cell">4</div>
+          <div class="range-cell in">5</div>
+          <div class="range-cell">6</div>
+          <div class="range-cell in">7</div>
+          <div class="range-cell">8</div>
+          <div class="range-cell in">9</div>
+          <div class="range-cell edge">10</div>
+        </div>
+        <div class="range-desc"><strong>With stride.</strong> Every nth value.</div>
+      </div>
+
+      <div class="range-row">
+        <div class="range-syntax">5 downTo 1</div>
+        <div class="range-viz">
+          <div class="range-cell edge">5</div>
+          <div class="range-cell in">4</div>
+          <div class="range-cell in">3</div>
+          <div class="range-cell in">2</div>
+          <div class="range-cell edge">1</div>
+        </div>
+        <div class="range-desc"><strong>Reverse.</strong> 5, 4, 3, 2, 1.</div>
+      </div>
+
+      <div class="range-row">
+        <div class="range-syntax">'a'..'z'</div>
+        <div class="range-viz">
+          <div class="range-cell edge">a</div>
+          <div class="range-cell in">b</div>
+          <div class="range-cell">…</div>
+          <div class="range-cell in">y</div>
+          <div class="range-cell edge">z</div>
+        </div>
+        <div class="range-desc"><strong>Char ranges work too</strong> — and so do custom <code>Comparable</code> types.</div>
+      </div>
+    </div>
+
+    <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// `in` and `!in` are range-membership operators</span>
+  <span class="k">if</span> (score <span class="k">in</span> <span class="n">0</span>..<span class="n">100</span>) <span class="fn">println</span>(<span class="s">"valid"</span>)
+  <span class="k">if</span> (ch <span class="k">!</span><span class="k">in</span> <span class="s">'a'</span>..<span class="s">'z'</span>) <span class="fn">println</span>(<span class="s">"not lowercase"</span>)
+
+  <span class="c">// Ranges are objects — you can name them, pass them around</span>
+  <span class="k">val</span> validAges = <span class="n">0</span>..<span class="n">120</span>
+  <span class="k">val</span> isValid = age <span class="k">in</span> validAges</div>
+
+    <!-- 5. LOOPS -->
+    <h2><span class="num">5</span>loops — "do this for each thing"</h2>
+
+    <p>
+      Kotlin has the loop shapes you'd expect, but <code>for</code> is the
+      workhorse. It doesn't loop a counter — it iterates over anything that has
+      an iterator (lists, sets, maps, ranges, strings, files).
+    </p>
+
+    <div class="concept" data-t="loops">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">for · while · repeat</h3>
+          <div class="concept-sub">three loop shapes, each for a different job</div>
+        </div>
+      </div>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// for — iterate over anything iterable</span>
+  <span class="k">for</span> (u <span class="k">in</span> users) <span class="fn">println</span>(u.name)
+  <span class="k">for</span> (i <span class="k">in</span> <span class="n">1</span>..<span class="n">5</span>) <span class="fn">println</span>(i)           <span class="c">// 1, 2, 3, 4, 5</span>
+  <span class="k">for</span> (i <span class="k">in</span> <span class="n">0</span> until <span class="v">users</span>.<span class="v">size</span>) <span class="fn">println</span>(users[i])   <span class="c">// 0 to size-1</span>
+  <span class="k">for</span> ((k, v) <span class="k">in</span> map) <span class="fn">println</span>(<span class="s">"</span><span class="th">$k</span><span class="s"> = </span><span class="th">$v</span><span class="s">"</span>)   <span class="c">// destructuring for maps</span>
+  <span class="k">for</span> ((i, u) <span class="k">in</span> users.<span class="fn">withIndex</span>()) <span class="fn">println</span>(<span class="s">"</span><span class="th">$i</span><span class="s">: </span><span class="th">$u</span><span class="s">"</span>)   <span class="c">// index + element</span>
+
+  <span class="c">// while — when you don't know iterations up front</span>
+  <span class="k">var</span> n = <span class="n">0</span>
+  <span class="k">while</span> (n &lt; <span class="n">100</span> &amp;&amp; !<span class="fn">done</span>()) &#123;
+      n += <span class="fn">step</span>()
+  &#125;
+
+  <span class="c">// repeat — do this N times (cleaner than `for (i in 1..n)` when you don't need the index)</span>
+  <span class="fn">repeat</span>(<span class="n">3</span>) &#123; <span class="fn">println</span>(<span class="s">"hi"</span>) &#125;   <span class="c">// hi, hi, hi</span></div>
+
+      <div class="concept-line">
+        <strong>No traditional C-style for loop.</strong> Kotlin doesn't have
+        <code>for (int i = 0; i &lt; n; i++)</code>. The reason: every use of that
+        pattern is either "iterate a range" (use <code>for (i in 0 until n)</code>)
+        or "iterate a collection" (use <code>for (x in xs)</code>). The middle
+        form is gone.
+      </div>
+
+      <h3>break, continue, and labels</h3>
+
+      <div class="code"><span class="code-tag">kotlin</span>
+  <span class="c">// break exits the nearest loop. continue skips to the next iteration.</span>
+  <span class="k">for</span> (u <span class="k">in</span> users) &#123;
+      <span class="k">if</span> (u.banned) <span class="k">continue</span>
+      <span class="k">if</span> (u.id == target) <span class="k">break</span>
+  &#125;
+
+  <span class="c">// Labels — break out of a NESTED loop. Rare, but useful.</span>
+  <span class="k">outer@</span> <span class="k">for</span> (row <span class="k">in</span> grid) &#123;
+      <span class="k">for</span> (cell <span class="k">in</span> row) &#123;
+          <span class="k">if</span> (cell == target) <span class="k">break@</span><span class="v">outer</span>   <span class="c">// breaks the OUTER loop</span>
+      &#125;
+  &#125;</div>
+    </div>
+
+    <!-- 6. FUNCTIONS WITH DEFAULT + NAMED ARGS -->
+    <h2><span class="num">6</span>functions — default args + named args</h2>
+
+    <p>
+      The last piece of ceremony: function calls. Kotlin lets you give parameters
+      default values, and lets callers pass them by name. Together, this
+      eliminates the need for overloads and removes "what was that second bool?"
+      confusion at call sites.
+    </p>
+
+    <div class="concept" data-t="fns">
+      <div class="concept-head">
+        <div class="concept-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 7h6v6"/><path d="M10 17 21 6"/><path d="M18 18 6 6l-3 3 12 12 3-3z"/></svg>
+        </div>
+        <div>
+          <h3 class="concept-title">fun f(a: T, b: T = default, c: T = default): R</h3>
+          <div class="concept-sub">declare defaults in the signature · call with names when it helps clarity</div>
+        </div>
+      </div>
+
+      <div class="sig-viz">
+        <h3 style="margin-top: 0;">One function, many call shapes</h3>
+
+        <div class="sig-def"><span class="k">fun</span> <span class="fn">connect</span>(
+      host: <span class="t">String</span>,
+      port: <span class="t">Int</span> = <span class="df">443</span>,
+      timeoutMs: <span class="t">Long</span> = <span class="df">5_000</span>,
+      retries: <span class="t">Int</span> = <span class="df">3</span>
+  ): <span class="t">Connection</span></div>
+
+        <div class="calls">
+          <div class="call-row">
+            <div class="call-code"><span class="fn">connect</span>(<span class="s">"api.x.com"</span>)</div>
+            <div class="call-result">→ all defaults</div>
+          </div>
+          <div class="call-row">
+            <div class="call-code"><span class="fn">connect</span>(<span class="s">"api.x.com"</span>, port = <span class="n">80</span>)</div>
+            <div class="call-result">→ port overridden</div>
+          </div>
+          <div class="call-row">
+            <div class="call-code"><span class="fn">connect</span>(<span class="s">"api.x.com"</span>, timeoutMs = <span class="n">10_000</span>, retries = <span class="n">5</span>)</div>
+            <div class="call-result">→ skip port, override two</div>
+          </div>
+          <div class="call-row">
+            <div class="call-code"><span class="fn">connect</span>(host = <span class="s">"api.x.com"</span>, port = <span class="n">80</span>)</div>
+            <div class="call-result">→ all named</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pair">
+        <div>
+          <div class="pair-label bad">Without defaults — overload explosion</div>
+          <div class="code"><span class="c">// Four overloads to cover the combinations people actually call</span>
+  <span class="k">fun</span> <span class="fn">connect</span>(host: <span class="t">String</span>): <span class="t">Connection</span>
+  <span class="k">fun</span> <span class="fn">connect</span>(host: <span class="t">String</span>, port: <span class="t">Int</span>): <span class="t">Connection</span>
+  <span class="k">fun</span> <span class="fn">connect</span>(host: <span class="t">String</span>, port: <span class="t">Int</span>, timeoutMs: <span class="t">Long</span>): <span class="t">Connection</span>
+  <span class="k">fun</span> <span class="fn">connect</span>(host: <span class="t">String</span>, port: <span class="t">Int</span>, timeoutMs: <span class="t">Long</span>, retries: <span class="t">Int</span>): <span class="t">Connection</span></div>
+        </div>
+        <div>
+          <div class="pair-label good">With defaults — one signature</div>
+          <div class="code"><span class="k">fun</span> <span class="fn">connect</span>(
+      host: <span class="t">String</span>,
+      port: <span class="t">Int</span> = <span class="n">443</span>,
+      timeoutMs: <span class="t">Long</span> = <span class="n">5_000</span>,
+      retries: <span class="t">Int</span> = <span class="n">3</span>
+  ): <span class="t">Connection</span></div>
+        </div>
+      </div>
+
+      <div class="concept-line">
+        <strong>Named args are also self-documenting at the call site.</strong>
+        Compare <code>connect("api.x.com", 443, 5000, 3)</code> with
+        <code>connect("api.x.com", retries = 3)</code>. Same call, the second one
+        tells you what the <code>3</code> means.
+      </div>
+    </div>
+
+    <div class="warn">
+      <strong>One rule with named args:</strong> once you start naming, you can't
+      go back to positional for the same call. It's all-named or all-positional.
+    </div>
+
+    <!-- PICKING TOOLS -->
+    <h2>Quick reference: which loop, which control flow?</h2>
+
+    <div class="tree">
+      <div class="tree-node">
+        <div class="tree-q">Q1 · "I have a collection, I want to do something to each."</div>
+        <div class="tree-q-body">Use <code>for (x in xs)</code> or, more often, a collection op like <code>map</code> / <code>filter</code> / <code>forEach</code>.</div>
+        <div class="tree-ans">→ for (x in xs) &#123; ... &#125;</div>
+      </div>
+
+      <div class="tree-node">
+        <div class="tree-q">Q2 · "I need to repeat a fixed number of times."</div>
+        <div class="tree-q-body">Use <code>repeat(n) &#123; &#125;</code> if you don't need the index, or <code>for (i in 0 until n)</code> if you do.</div>
+        <div class="tree-ans">→ repeat(n) &#123; ... &#125; · for (i in 0 until n)</div>
+      </div>
+
+      <div class="tree-node">
+        <div class="tree-q">Q3 · "I don't know iterations up front — depends on a condition."</div>
+        <div class="tree-q-body">Use <code>while</code>. The condition is the loop.</div>
+        <div class="tree-ans">→ while (cond) &#123; ... &#125;</div>
+      </div>
+
+      <div class="tree-node">
+        <div class="tree-q">Q4 · "I need to pick a value based on a condition."</div>
+        <div class="tree-q-body">Use <code>if/else</code> or <code>when</code> as an expression. No temporary variable needed.</div>
+        <div class="tree-ans">→ val x = if (cond) a else b</div>
+      </div>
+    </div>
+
+    <!-- RECIPES -->
+    <h2>Common patterns (copy these)</h2>
+
+    <div class="recipes">
+      <div class="recipe">
+        <div class="recipe-name">val first, then var only if needed</div>
+        <div class="recipe-desc">Default to val. Switch to var only when you actually reassign.</div>
+        <div class="code"><span class="k">val</span> name = <span class="fn">readName</span>()    <span class="c">// won't change</span>
+  <span class="k">var</span> retries = <span class="n">0</span>           <span class="c">// will be reassigned in a loop</span>
+  <span class="k">while</span> (retries &lt; <span class="n">3</span>) &#123;
+      <span class="k">if</span> (<span class="fn">try</span>()) <span class="k">break</span>
+      retries++
+  &#125;</div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">if/else as an expression</div>
+        <div class="recipe-desc">One line, no temporary variable, no ceremony.</div>
+        <div class="code"><span class="k">val</span> label = <span class="k">if</span> (score &gt;= <span class="n">60</span>) <span class="s">"pass"</span> <span class="k">else</span> <span class="s">"fail"</span>
+
+  <span class="c">// Use as block form when each branch has multiple lines:</span>
+  <span class="k">val</span> result = <span class="k">if</span> (x &gt; <span class="n">0</span>) &#123;
+      <span class="fn">compute</span>()
+      <span class="s">"positive"</span>
+  &#125; <span class="k">else</span> &#123;
+      <span class="fn">fallback</span>()
+      <span class="s">"non-positive"</span>
+  &#125;</div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">when over an enum or sealed class</div>
+        <div class="recipe-desc">Exhaustive matching — compiler ensures all cases are handled.</div>
+        <div class="code"><span class="k">val</span> text = <span class="k">when</span> (state) &#123;
+      <span class="k">is</span> <span class="t">Loading</span> -&gt; <span class="s">"…"</span>
+      <span class="k">is</span> <span class="t">Success</span> -&gt; <span class="s">"</span><span class="th">$&#123;</span>state.data.size<span class="th">&#125;</span><span class="s"> items"</span>
+      <span class="k">is</span> <span class="t">Error</span>   -&gt; <span class="s">"oops: </span><span class="th">$&#123;</span>state.msg<span class="th">&#125;</span><span class="s">"</span>
+  &#125;</div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">Loop with index (when you really need it)</div>
+        <div class="recipe-desc">`withIndex()` gives you `(index, element)` pairs.</div>
+        <div class="code"><span class="k">for</span> ((i, u) <span class="k">in</span> users.<span class="fn">withIndex</span>()) &#123;
+      <span class="fn">println</span>(<span class="s">"</span><span class="th">$i</span><span class="s">: </span><span class="th">$u</span><span class="s">"</span>)
+  &#125;
+  <span class="c">// 0: User(...)</span>
+  <span class="c">// 1: User(...)</span></div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">Default + named at call site</div>
+        <div class="recipe-desc">Override only what you need, name what isn't obvious.</div>
+        <div class="code"><span class="c">// fun connect(host, port=443, timeout=5000, retries=3)</span>
+  <span class="fn">connect</span>(<span class="s">"api.x.com"</span>)                      <span class="c">// all defaults</span>
+  <span class="fn">connect</span>(<span class="s">"api.x.com"</span>, retries = <span class="n">5</span>)         <span class="c">// skip ahead with names</span>
+  <span class="fn">connect</span>(<span class="s">"api.x.com"</span>, port = <span class="n">80</span>, timeout = <span class="n">1000</span>)</div>
+      </div>
+
+      <div class="recipe">
+        <div class="recipe-name">Repeat N times</div>
+        <div class="recipe-desc">Cleaner than a for loop when you don't need the index.</div>
+        <div class="code"><span class="fn">repeat</span>(<span class="n">3</span>) &#123;
+      <span class="fn">println</span>(<span class="s">"loading…"</span>)
+  &#125;
+
+  <span class="c">// If you do need the index, use a range:</span>
+  <span class="k">for</span> (i <span class="k">in</span> <span class="n">0</span> until <span class="n">3</span>) <span class="fn">println</span>(<span class="s">"step </span><span class="th">$i</span><span class="s">"</span>)</div>
+      </div>
+    </div>
+
+    <!-- RECAP -->
+    <div class="recap">
+      <h2><span class="num">↺</span>Recap in one minute</h2>
+      <p>
+        Six features, one philosophy: <em>remove ceremony, leave intent.</em>
+        Every feature on this page is a different place that philosophy shows up.
+      </p>
+      <div class="recap-grid">
+        <div class="recap-item">
+          <div class="lbl">val / var</div>
+          <div class="desc"><code>val</code> by default — a read-only reference. <code>var</code> only when reality requires reassignment. Controls the binding, not necessarily the object.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">types</div>
+          <div class="desc">Basic types: <code>Int</code>, <code>Long</code>, <code>Double</code>, <code>Boolean</code>, <code>String</code>, <code>Char</code>. Inference handles the rest. Annotate explicitly when it adds information.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">if / when / try as expressions</div>
+          <div class="desc">Control flow <em>produces</em> a value. <code>val x = if (c) a else b</code>. No temporary variables, no separate return statements. <code>when</code> as expression is exhaustive.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">ranges</div>
+          <div class="desc"><code>1..5</code> (inclusive), <code>1 until 5</code> (exclusive end), <code>1..10 step 2</code> (stride), <code>5 downTo 1</code> (reverse). <code>in</code>/<code>!in</code> are membership tests.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">loops</div>
+          <div class="desc"><code>for (x in xs)</code> for any iterable. <code>while</code> for condition-driven loops. <code>repeat(n) &#123; &#125;</code> for N-times. No C-style for loop — the ceremony was always hiding a range or a collection.</div>
+        </div>
+        <div class="recap-item">
+          <div class="lbl">functions: default + named args</div>
+          <div class="desc">Defaults in the signature eliminate overloads. Named args at the call site self-document (<code>connect(retries = 3)</code>). One signature, many call shapes.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="end">
+      One philosophy, six places it shows up: <em>if a piece of syntax only exists to
+      satisfy the compiler, Kotlin removes it. What stays is intent.</em>
+    </div>
+</LessonLayout>
+
+<style>
+/* ==== Page-specific: ceremony reduction table ==== */
+  .reduce { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 40px 0; }
+  .reduce-title { text-align: center; color: var(--ink-soft); font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 24px; }
+  .reduce-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  .reduce-table th { text-align: left; padding: 12px 16px; color: var(--ink-soft); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 2px solid var(--line); }
+  .reduce-table td { padding: 14px 16px; border-bottom: 1px solid var(--line-soft); color: var(--ink-mid); vertical-align: top; }
+  .reduce-table tr:last-child td { border-bottom: none; }
+  .reduce-table .feat { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--primary); font-weight: 600; white-space: nowrap; }
+  .reduce-table .gone { color: #b06367; text-decoration: line-through; font-style: italic; }
+  .reduce-table .kept { color: var(--accent); font-weight: 600; }
+
+  /* ==== Page-specific: ranges visualization ==== */
+  .ranges { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 32px 0; }
+  .range-row { display: grid; grid-template-columns: 160px 1fr 200px; gap: var(--space-4); align-items: center; padding: 14px 0; }
+  .range-row + .range-row { border-top: 1px dashed var(--line); }
+  @media (max-width: 720px) { .range-row { grid-template-columns: 1fr; gap: 8px; } }
+  .range-syntax { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; font-weight: 600; color: var(--primary); }
+  .range-viz { display: flex; align-items: center; gap: 4px; overflow-x: auto; }
+  .range-cell { width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-soft); background: white; }
+  .range-cell.in { background: var(--primary); color: white; border-color: var(--primary); font-weight: 600; }
+  .range-cell.edge { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; }
+  .range-desc { font-size: 13.5px; color: var(--ink-mid); }
+
+  /* ==== Page-specific: function signature visual ==== */
+  .sig-viz { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--r-xl); padding: var(--space-8); margin: 32px 0; }
+  .sig-def { background: #1a1f2b; color: #e6e6e6; font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; border-radius: 12px; padding: 16px 20px; margin: 12px 0 20px; overflow-x: auto; }
+  .sig-def .k { color: var(--code-keyword); }
+  .sig-def .fn { color: var(--code-fn); }
+  .sig-def .t { color: var(--code-type); }
+  .sig-def .v { color: #ff5370; }
+  .sig-def .df { color: var(--accent); }
+  .sig-def .c { color: var(--code-comment); font-style: italic; }
+  .calls { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .call-row { display: grid; grid-template-columns: 1fr 80px; gap: 12px; align-items: center; padding: 10px 14px; background: #fbfaf6; border: 1px solid var(--line-soft); border-radius: 8px; }
+  .call-row .call-code { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--ink); }
+  .call-row .call-result { font-size: 12px; color: var(--ink-soft); font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>

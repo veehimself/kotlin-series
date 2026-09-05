@@ -1,0 +1,359 @@
+---
+/**
+ * Landing page — the front door. Lists the 5 lessons with
+ * their through-lines and links to each.
+ */
+import LessonLayout from '../layouts/LessonLayout.astro';
+
+const lessons = [
+  { num: 1, slug: '01-syntax', title: 'Kotlin syntax — the foundations', tag: 'the one idea: less ceremony, more intent', desc: 'val/var, types, control flow as expressions, ranges, loops, default and named arguments. The pieces that show up in every program.' },
+  { num: 2, slug: '02-classes-null-safety', title: 'Classes & null safety', tag: 'the one idea: make impossible states impossible', desc: 'Primary/secondary constructors, properties, visibility, and the null safety system: ?., ?:, smart casts, !!.' },
+  { num: 3, slug: '03-data-modeling', title: 'Modeling data in Kotlin', tag: 'the one idea: constrain the set of legal values', desc: 'data class, sealed class, enum class, object, and companion object — one spectrum from "exactly one value" to "any of N data shapes."' },
+  { num: 4, slug: '04-scope-functions', title: 'Extension & scope functions', tag: 'the one idea: temporarily change the context', desc: 'Extension functions as the engine, then let, apply, run, also, with on a 2×2: who is this and what does the block return.' },
+  { num: 5, slug: '05-functional', title: 'Functional Kotlin', tag: 'the one idea: behavior as a value', desc: 'Lambdas, higher-order functions, and the collection ops (map, filter, reduce, groupBy) as pre-written HOFs.' },
+];
+---
+
+<LessonLayout
+  title="Kotlin, in five connected ideas"
+  description="A series of five lessons on Kotlin — syntax, null safety, data modeling, scope functions, and functional style — each framed as one connected idea."
+  number={0}
+  primary="#2c5f5d"
+  accent="#e8896b"
+>
+  <div class="eyebrow">Kotlin series · 5 lessons</div>
+  <h1>Kotlin, in <em>five</em> connected ideas.</h1>
+  <p class="lede">
+    Each of these lessons is a tour of one part of the language — syntax, null
+    safety, data modeling, scope functions, functional style. But they all
+    share the same philosophy: <strong>remove ceremony, make the right thing
+    easy, and let the type system do the work.</strong>
+  </p>
+
+  <div class="meta">
+    <span>📚 5 lessons</span>
+    <span>⏱ ~50 min total</span>
+    <span>🎯 Beginner → intermediate</span>
+  </div>
+
+  <!-- Series arc -->
+  <section class="arc" aria-label="Series overview">
+    <div class="arc-title">The five lessons, in order</div>
+    <div class="arc-track">
+      <div class="arc-line" aria-hidden="true"></div>
+      <div class="arc-nodes">
+        {lessons.map((l) => (
+          <a class="arc-node" href={`/${l.slug}/`}>
+            <div class="arc-dot">{l.num}</div>
+            <div class="arc-name">{l.title.split('—')[0].replace('& ', '').trim()}</div>
+            <div class="arc-tag">{l.tag.replace('the one idea: ', '')}</div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <h2>Open a lesson</h2>
+  <div class="lessons">
+    {lessons.map((l) => (
+      <a class="lesson" href={`/${l.slug}/`}>
+        <div class="lesson-num">{String(l.num).padStart(2, '0')}</div>
+        <div class="lesson-body">
+          <h3 class="lesson-title">{l.title}</h3>
+          <div class="lesson-tag">{l.tag}</div>
+          <p class="lesson-desc">{l.desc}</p>
+        </div>
+        <div class="lesson-arrow" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </div>
+      </a>
+    ))}
+  </div>
+
+  <!-- One philosophy panel -->
+  <section class="one-idea">
+    <div class="tag">The through-line</div>
+    <h2>One philosophy, five places it shows up.</h2>
+    <p>
+      Kotlin has a bias. It thinks the right thing should be the easy thing, and
+      the wrong thing should be hard to write. The five lessons above are five
+      different places that bias shows up.
+    </p>
+    <p>
+      Syntax removes ceremony. Null safety makes bad states unrepresentable.
+      Data modeling lets the type system know what's legal. Scope functions
+      let you change context without changing identity. Functional style turns
+      behavior into a value. Same goal, different surface.
+    </p>
+    <div class="one-idea-grid">
+      <div class="one-idea-item"><div class="n">01</div><div class="t">Less ceremony, more intent.</div></div>
+      <div class="one-idea-item"><div class="n">02</div><div class="t">Impossible states are impossible to write.</div></div>
+      <div class="one-idea-item"><div class="n">03</div><div class="t">The type knows the set of legal values.</div></div>
+      <div class="one-idea-item"><div class="n">04</div><div class="t">Context shifts are explicit and local.</div></div>
+      <div class="one-idea-item"><div class="n">05</div><div class="t">Behavior is a value, like data.</div></div>
+    </div>
+  </section>
+
+  <!-- How to use -->
+  <section class="howto">
+    <h2>How to read this series</h2>
+    <div class="howto-grid">
+      <div class="howto-step">
+        <div class="howto-num">1</div>
+        <div class="howto-body">
+          <h4>In order if you're new to Kotlin</h4>
+          <p>Each lesson builds on the last. Syntax is the floor, functional is the ceiling. The order is the path.</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <div class="howto-num">2</div>
+        <div class="howto-body">
+          <h4>Out of order if you're coming from another language</h4>
+          <p>Already know Java or Swift? Start with whatever's most foreign. Null safety, sealed classes, and scope functions tend to be the new stuff.</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <div class="howto-num">3</div>
+        <div class="howto-body">
+          <h4>As a reference later</h4>
+          <p>Each lesson is self-contained. The recap at the end of each is meant to be skimmable on its own.</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <div class="howto-num">4</div>
+        <div class="howto-body">
+          <h4>One at a time</h4>
+          <p>Each is about 10–12 minutes of focused reading. Don't try to do all five in one sitting.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="end">
+    Five lessons, one philosophy: <em>the right thing should be the easy thing.</em>
+  </div>
+</LessonLayout>
+
+<style>
+  .arc {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-2xl);
+    padding: 40px 32px 32px;
+    margin: 48px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  }
+  .arc-title {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+  .arc-track { position: relative; padding: 0 8px; }
+  .arc-line {
+    position: absolute;
+    top: 24px; left: 24px; right: 24px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--primary) 100%);
+    z-index: 0;
+  }
+  .arc-nodes {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    position: relative; z-index: 1;
+  }
+  .arc-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: inherit;
+    transition: transform 0.2s;
+  }
+  .arc-node:hover { transform: translateY(-2px); }
+  .arc-dot {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 3px solid var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--primary);
+    margin-bottom: 14px;
+    transition: box-shadow 0.2s;
+  }
+  .arc-node:hover .arc-dot {
+    box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.12);
+  }
+  .arc-name {
+    font-family: "Outfit", sans-serif;
+    font-size: 14px; font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .arc-tag {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    font-style: italic;
+    line-height: 1.3;
+  }
+  @media (max-width: 720px) {
+    .arc-line { display: none; }
+    .arc-nodes { grid-template-columns: 1fr; gap: 16px; }
+    .arc-node { flex-direction: row; gap: 16px; text-align: left; }
+    .arc-dot { margin-bottom: 0; flex-shrink: 0; }
+  }
+
+  .lessons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    margin: 32px 0;
+  }
+  .lesson {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: var(--space-5);
+    align-items: center;
+    color: inherit;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .lesson:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+  }
+  .lesson-num {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--primary);
+    line-height: 1;
+  }
+  .lesson-body { min-width: 0; }
+  .lesson-title {
+    font-family: "DM Serif Display", Georgia, "Times New Roman", serif;
+    font-size: 24px;
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 0 0 4px;
+  }
+  .lesson-tag {
+    font-size: 13px; color: var(--accent);
+    font-weight: 600;
+    font-style: italic;
+    margin-bottom: 6px;
+  }
+  .lesson-desc {
+    font-size: 14.5px; color: var(--ink-mid);
+    margin: 0;
+    line-height: 1.5;
+  }
+  .lesson-arrow {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+  }
+  .lesson:hover .lesson-arrow { background: var(--primary); color: white; }
+  @media (max-width: 640px) {
+    .lesson { grid-template-columns: 50px 1fr; padding: 20px; }
+    .lesson-arrow { display: none; }
+    .lesson-num { font-size: 28px; }
+    .lesson-title { font-size: 20px; }
+  }
+
+  .one-idea {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 100%);
+    color: white;
+    border-radius: var(--r-xl);
+    padding: 40px;
+    margin: 48px 0;
+  }
+  .one-idea .tag {
+    display: inline-block;
+    color: #c3e88d;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+  .one-idea h2 { color: white; margin: 0 0 16px; font-size: 32px; }
+  .one-idea p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
+    max-width: 720px;
+    margin: 0 0 12px;
+  }
+  .one-idea-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-4);
+    margin-top: var(--space-6);
+  }
+  @media (max-width: 720px) { .one-idea-grid { grid-template-columns: 1fr; } }
+  .one-idea-item {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--r-md);
+    padding: var(--space-4);
+  }
+  .one-idea-item .n {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; color: #c3e88d; margin-bottom: 4px;
+  }
+  .one-idea-item .t {
+    font-size: 14px; line-height: 1.4; color: rgba(255, 255, 255, 0.95);
+  }
+
+  .howto {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-xl);
+    padding: var(--space-8);
+    margin: 32px 0;
+  }
+  .howto h2 { margin-top: 0; }
+  .howto-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+    margin-top: 20px;
+  }
+  @media (max-width: 720px) { .howto-grid { grid-template-columns: 1fr; } }
+  .howto-step { display: flex; gap: 14px; }
+  .howto-num {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px; font-weight: 600;
+  }
+  .howto-body h4 {
+    font-family: "Outfit", sans-serif;
+    font-size: 15px; font-weight: 600;
+    margin: 0 0 4px; color: var(--ink);
+  }
+  .howto-body p {
+    font-size: 14px; color: var(--ink-mid);
+    margin: 0; line-height: 1.5;
+  }
+</style>

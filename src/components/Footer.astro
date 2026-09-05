@@ -1,0 +1,54 @@
+---
+/**
+ * Page footer — small, friendly, with a "back to all lessons" link.
+ */
+const year = new Date().getFullYear();
+---
+
+<footer class="foot">
+  <div class="foot-inner">
+    <a class="foot-link" href="/">← All lessons</a>
+    <p class="foot-text">Kotlin, in five connected ideas · {year}</p>
+    <a class="foot-link ext" href="https://kotlinlang.org" target="_blank" rel="noopener">
+      kotlinlang.org
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+    </a>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    border-top: 1px solid var(--line);
+    margin-top: var(--space-20);
+    padding: var(--space-8) 0;
+    background: color-mix(in srgb, var(--bg-card) 50%, transparent);
+  }
+  .foot-inner {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .foot-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-mid);
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .foot-link:hover { color: var(--primary); }
+  .foot-text {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+  }
+  @media (max-width: 640px) {
+    .foot-inner { justify-content: center; text-align: center; flex-direction: column; }
+  }
+</style>
