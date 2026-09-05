@@ -8,8 +8,8 @@ const repo = process.env.GITHUB_REPOSITORY?.split('/')[1] || 'kotlin-series';
 const isUserSite = process.env.GITHUB_REPOSITORY?.endsWith('.github.io') ?? false;
 
 export default defineConfig({
-  site: `https://${process.env.GITHUB_REPOSITORY_OWNER ?? 'YOUR_USER'}.github.io`,
-  base: isUserSite ? '/' : `/${repo}/`,
+  site: 'https://veehimself.github.io',
+  base: '/kotlin-series',
   trailingSlash: 'always',
   build: {
     inlineStylesheets: 'auto',
